@@ -1,2 +1,5 @@
 [alias]
   run='fake Run'
+  web='-p src/FsTweet.Web/FsTweet.Web.fsproj'
+  newFs='new file -t fs'
+  moveUp='move file -u'

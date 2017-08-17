@@ -1,7 +1,12 @@
 RESTRICTION: == net461
 NUGET
   remote: https://www.nuget.org/api/v2
+    DotLiquid (2.0.64)
     FAKE (4.63)
     FSharp.Core (4.2.2)
-    Suave (2.1.1)
+    Suave (2.2)
       FSharp.Core (>= 4.0.0.1)
+    Suave.DotLiquid (2.2)
+      DotLiquid (>= 2.0.64)
+      FSharp.Core (>= 4.0.0.1)
+      Suave (>= 2.2)

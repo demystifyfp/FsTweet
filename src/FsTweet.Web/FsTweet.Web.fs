@@ -1,9 +1,11 @@
-module MyWebApi.Program
+module FsTweet.Web
 
 open Suave
-open Suave.Successful
 
 [<EntryPoint>]
 let main argv =
-    startWebServer defaultConfig (OK "Hello World!")
-    0
+  //DotLiquid.setCSharpNamingConvention ()
+  DotLiquid.setTemplatesDir View.viewsDir
+  let app = SuaveApp.init ()
+  startWebServer defaultConfig app
+  0

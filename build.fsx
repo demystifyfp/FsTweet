@@ -34,9 +34,18 @@ Target "Run" (fun _ ->
     |> ignore
 )
 
+let noFilter = fun _ -> true
+
+Target "Views" (fun _ ->
+    let srcDir = "./src/FsTweet.Web/views"
+    let targetDir = combinePaths buildDir "views"
+    CopyDir targetDir srcDir noFilter
+)
+
 // Build order
 "Clean"
   ==> "Build"
+  ==> "Views"
   ==> "Run"
 
 // start build
