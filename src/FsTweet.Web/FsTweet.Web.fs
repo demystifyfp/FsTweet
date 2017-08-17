@@ -10,7 +10,7 @@ open System.Reflection
 let currentPath =
   Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
 
-let initDotLiquid _ =
+let initDotLiquid () =
   setCSharpNamingConvention ()
   let templatesDir = Path.Combine(currentPath, "views")
   setTemplatesDir templatesDir
