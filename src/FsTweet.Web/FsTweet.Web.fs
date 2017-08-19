@@ -1,4 +1,4 @@
-module FsTweet.Web
+module FsTweetWeb.Main
 
 open Suave
 open Suave.Filters
@@ -6,7 +6,6 @@ open Suave.Operators
 open Suave.DotLiquid
 open System.IO
 open System.Reflection
-
 open Suave.Files
 
 let currentPath =
@@ -33,6 +32,7 @@ let main argv =
     choose [
       serveAssets
       path "/" >=> page "guest/home.liquid" ""
+      UserSignup.Suave.webPart ()
     ]
     
   startWebServer defaultConfig app

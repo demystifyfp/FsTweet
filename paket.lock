@@ -10,3 +10,6 @@ NUGET
       DotLiquid (>= 2.0.64)
       FSharp.Core (>= 4.0.0.1)
       Suave (>= 2.2)
+    Suave.Experimental (2.2)
+      FSharp.Core (>= 4.0.0.1)
+      Suave (>= 2.2)

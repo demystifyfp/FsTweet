@@ -5,3 +5,4 @@ nuget FAKE
 nuget FSharp.Core
 nuget Suave
 nuget Suave.DotLiquid
+nuget Suave.Experimental

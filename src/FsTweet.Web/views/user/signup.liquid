@@ -1,0 +1,28 @@
+{% extends "master_page.liquid" %}
+
+{% block head %}
+  <title> Sign Up - FsTweet </title>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <form class="form-signup" method="POST" action="/signup">
+    <h2 class="form-signup-heading">Join FsTweet Today!</h2>
+    {% if model.Error %}
+      <p class="bg-danger">
+        {{ model.Error.Value }}
+      </p>
+    {% endif %}
+    <label for="Email" class="sr-only">Email address</label>
+    <input type="email" name="Email" class="form-control" placeholder="Email address" required autofocus value={{ model.Email }}>
+    
+    <label for="Username" class="sr-only">Username</label>
+    <input type="text" name="Username" class="form-control" placeholder="Username" required value={{ model.Username }}>
+    <label for="Password" class="sr-only">Password</label>
+    <input type="password" name="Password" class="form-control" placeholder="Password" required>
+    
+    <button class="btn btn-lg btn-primary btn-block" type="submit">Sign up</button>
+    
+  </form>
+</div>
+{% endblock %}
