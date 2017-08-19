@@ -1,6 +1,12 @@
 <!DOCTYPE HTML>
 <html>
 	<head>
+		<!-- Latest compiled and minified CSS -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+		<!-- Optional theme -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css">
+		<link rel="stylesheet" href="assets/css/styles.css">
 		{% block head %}
 		{% endblock %}
 	</head>
@@ -10,6 +16,10 @@
 			{% endblock %}
 		</div>
 		<div id="scripts">
+			<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+			<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+			<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment.min.js"></script>
+			<script src="https://cdnjs.cloudflare.com/ajax/libs/mustache.js/2.3.0/mustache.min.js"></script>
 			{% block scripts %}
 			{% endblock %}
 		</div>		
