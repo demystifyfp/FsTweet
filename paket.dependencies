@@ -1,5 +1,6 @@
 source https://www.nuget.org/api/v2
 framework: net461
+nuget BCrypt.Net-Next
 nuget Chessie
 nuget DotLiquid 2.0.64
 nuget FAKE
