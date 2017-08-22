@@ -34,7 +34,7 @@ module Domain =
       | x when x.Length < 4 || x.Length > 8 -> fail "Password should contain only 4-8 characters"
       | x -> Password x |> ok
 
-  type SignupUser = {
+  type UserSignupRequest = {
     Username : Username
     Password : Password
     EmailAddress : EmailAddress
@@ -79,9 +79,9 @@ module Suave =
     match bindEmptyForm ctx.request with
     | Choice1Of2 (vm : UserSignupViewModel) ->
       let result =
-        SignupUser.TryCreate (vm.Username, vm.Password, vm.Email)
-      let onSuccess (signupUser, _) =
-        printfn "%A" signupUser
+        UserSignupRequest.TryCreate (vm.Username, vm.Password, vm.Email)
+      let onSuccess (userSignupReq, _) =
+        printfn "%A" userSignupReq
         Redirection.FOUND "/signup" ctx
       let onFailure msgs =
         let viewModel = {vm with Error = Some (List.head msgs)}
