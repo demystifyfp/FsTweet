@@ -64,6 +64,21 @@ module Domain =
           }
         }
 
+  type UserId = UserId of int
+  type VerificationCode = VerificationCode of string
+
+  type CreateUserError =
+  | EmailAlreadyExists
+  | UsernameAlreadyExists
+  | OperationError of System.Exception
+
+  type UserSignupResponse = {
+    UserId : UserId
+    VerificationCode : VerificationCode
+  }
+
+  type CreateUser = UserSignupRequest -> AsyncResult<UserSignupResponse, CreateUserError>
+
 module Suave =
   open Suave
   open Suave.Filters
