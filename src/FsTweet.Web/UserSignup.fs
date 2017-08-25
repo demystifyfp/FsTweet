@@ -34,22 +34,9 @@ module Domain =
       | x when x.Length < 4 || x.Length > 8 -> fail "Password should contain only 4-8 characters"
       | x -> Password x |> ok
 
-  
-  type PasswordHash = private PasswordHash of string with
-    member this.Value =
-      let (PasswordHash passwordHash) = this
-      passwordHash
-
-    member this.Match password =
-      BCrypt.Verify(password, this.Value) 
-
-    static member Create (password : Password) =
-      let hash = BCrypt.HashPassword(password.Value)
-      PasswordHash hash
-
   type UserSignupRequest = {
     Username : Username
-    PasswordHash : PasswordHash
+    Password : Password
     EmailAddress : EmailAddress
   }
   with static member TryCreate (username, password, email) =
@@ -59,25 +46,10 @@ module Domain =
           let! emailAddress = EmailAddress.TryCreate email
           return {
             Username = username
-            PasswordHash = PasswordHash.Create password
+            Password = password
             EmailAddress = emailAddress
           }
         }
-
-  type UserId = UserId of int
-  type VerificationCode = VerificationCode of string
-
-  type CreateUserError =
-  | EmailAlreadyExists
-  | UsernameAlreadyExists
-  | OperationError of System.Exception
-
-  type UserSignupResponse = {
-    UserId : UserId
-    VerificationCode : VerificationCode
-  }
-
-  type CreateUser = UserSignupRequest -> AsyncResult<UserSignupResponse, CreateUserError>
 
 module Suave =
   open Suave

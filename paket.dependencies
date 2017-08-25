@@ -1,6 +1,5 @@
 source https://www.nuget.org/api/v2
 framework: net461
-nuget BCrypt.Net-Next
 nuget Chessie
 nuget DotLiquid 2.0.64
 nuget FAKE
@@ -8,3 +7,9 @@ nuget FSharp.Core
 nuget Suave
 nuget Suave.DotLiquid
 nuget Suave.Experimental
+
+group Database
+source https://www.nuget.org/api/v2
+
+nuget FluentMigrator
+nuget Npgsql
