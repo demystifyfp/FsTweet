@@ -10,6 +10,7 @@ nuget Suave.Experimental
 
 group Database
 source https://www.nuget.org/api/v2
+framework: net461
 
 nuget FluentMigrator
 nuget Npgsql

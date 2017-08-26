@@ -1,7 +1,7 @@
 // include Fake libs
 #r "./packages/FAKE/tools/FakeLib.dll"
 #r "./packages/FAKE/tools/Fake.FluentMigrator.dll"
-#r "./packages/database/Npgsql/lib/net45/Npgsql.dll"
+#r "./packages/database/Npgsql/lib/net451/Npgsql.dll"
 
 open Fake
 open Fake.FluentMigratorHelper
