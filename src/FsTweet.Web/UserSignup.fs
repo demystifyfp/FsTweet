@@ -2,7 +2,6 @@ namespace UserSignup
 
 module Domain =
   open Chessie.ErrorHandling
-  open BCrypt.Net
   type Username = private Username of string with
     static member TryCreate (username : string) =
       match username with
