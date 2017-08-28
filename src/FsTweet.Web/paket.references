@@ -6,5 +6,4 @@ Suave.Experimental
 Chessie
 BCrypt.Net-Next
 group Database
-SQLProvider
 Npgsql

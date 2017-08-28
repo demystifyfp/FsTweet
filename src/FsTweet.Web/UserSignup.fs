@@ -99,8 +99,10 @@ module Domain =
   let mapFailure f = 
     List.head >> f >> List.singleton |> mapFailure
 
-  let mapAsyncFailure f =
-    Async.ofAsyncResult >> Async.map (mapFailure f) >> AR
+  let mapAsyncFailure f aResult =
+    aResult
+    |> Async.ofAsyncResult 
+    |> Async.map (mapFailure f) |> AR
 
   let signupUser (createUser : CreateUser) 
                  (sendEmail : SendSignupEmail) 
@@ -193,10 +195,10 @@ module Suave =
       printfn "error while sending email : %A" seErr
       Redirection.redirect "/"
   
-  let handleUserSignupReq signupUser viewModel = 
-    signupUser  
-    >> Async.ofAsyncResult 
-    >> Async.map (mapUserSignupResult viewModel)
+  let handleUserSignupReq signupUser viewModel userSignupReq = 
+    signupUser userSignupReq
+    |> Async.ofAsyncResult 
+    |> Async.map (mapUserSignupResult viewModel)
 
   let handleUserSignup singupUser ctx = async {
     match bindEmptyForm ctx.request with

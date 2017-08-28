@@ -70,17 +70,6 @@
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6.1'">
       <ItemGroup>
-        <Reference Include="FSharp.Data.SqlProvider">
-          <HintPath>..\..\packages\database\SQLProvider\lib\FSharp.Data.SqlProvider.dll</HintPath>
-          <Private>True</Private>
-          <Paket>True</Paket>
-        </Reference>
-      </ItemGroup>
-    </When>
-  </Choose>
-  <Choose>
-    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6.1'">
-      <ItemGroup>
         <Reference Include="BCrypt.Net-Next">
           <HintPath>..\..\packages\BCrypt.Net-Next\lib\net452\BCrypt.Net-Next.dll</HintPath>
           <Private>True</Private>
