@@ -59,17 +59,6 @@
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6.1'">
       <ItemGroup>
-        <Reference Include="Npgsql">
-          <HintPath>..\..\packages\database\Npgsql\lib\net451\Npgsql.dll</HintPath>
-          <Private>True</Private>
-          <Paket>True</Paket>
-        </Reference>
-      </ItemGroup>
-    </When>
-  </Choose>
-  <Choose>
-    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6.1'">
-      <ItemGroup>
         <Reference Include="BCrypt.Net-Next">
           <HintPath>..\..\packages\BCrypt.Net-Next\lib\net452\BCrypt.Net-Next.dll</HintPath>
           <Private>True</Private>

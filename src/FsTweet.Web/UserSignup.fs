@@ -3,6 +3,7 @@ namespace UserSignup
 module Domain =
   open Chessie.ErrorHandling
   open BCrypt.Net
+  open System.Security.Cryptography
 
   type Username = private Username of string with
     static member TryCreate (username : string) =
@@ -57,15 +58,23 @@ module Domain =
       let (PasswordHash passwordHash) = this
       passwordHash
 
-    member this.Match password =
-      BCrypt.Verify(password, this.Value) 
-
     static member Create (password : Password) =
       BCrypt.HashPassword(password.Value)
       |> PasswordHash
+      
+  type VerificationCode = private VerificationCode of string with
+    member this.Value =
+      let (VerificationCode verificationCode) = this
+      verificationCode
+    static member Create () =
+      use rngCsp = new RNGCryptoServiceProvider()
+      let verificationCodeLength = 15
+      let b : byte [] = 
+        Array.zeroCreate verificationCodeLength
+      rngCsp.GetBytes(b)
+      System.Convert.ToBase64String b
+      |> VerificationCode 
 
-
-  type VerificationCode = VerificationCode of string
   type CreateUserRequest = {
     Username : Username
     PasswordHash : PasswordHash
@@ -75,12 +84,10 @@ module Domain =
 
   type UserId = UserId of int
 
-  type Error = System.Exception
-
   type CreateUserError =
   | EmailAlreadyExists
   | UsernameAlreadyExists
-  | Error of Error
+  | Error of System.Exception
 
   type CreateUser = 
     CreateUserRequest -> AsyncResult<UserId, CreateUserError>
@@ -89,7 +96,7 @@ module Domain =
     Username : Username
     VerificationCode : VerificationCode
   }
-  type SendEmailError = SendEmailError of Error
+  type SendEmailError = SendEmailError of System.Exception
   type SendSignupEmail = SignupEmailRequest -> AsyncResult<unit, SendEmailError>
 
   type UserSignupError =
@@ -108,13 +115,11 @@ module Domain =
                  (sendEmail : SendSignupEmail) 
                  (req : UserSignupRequest) = asyncTrial {
 
-    let verificationCode = VerificationCode "12323"
-
     let createUserReq = {
       PasswordHash = PasswordHash.Create req.Password
       Username = req.Username
       Email = req.EmailAddress
-      VerificationCode = verificationCode
+      VerificationCode = VerificationCode.Create()
     }
     let! userId = 
       createUser createUserReq
@@ -122,7 +127,7 @@ module Domain =
 
     let sendEmailReq = {
       Username = req.Username
-      VerificationCode = verificationCode
+      VerificationCode = createUserReq.VerificationCode
     }
     let! sendEmailRes = 
       sendEmail sendEmailReq

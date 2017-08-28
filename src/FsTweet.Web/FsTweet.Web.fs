@@ -7,7 +7,6 @@ open Suave.DotLiquid
 open System.IO
 open System.Reflection
 open Suave.Files
-open FSharp.Data.Sql
 
 let currentPath =
   Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
