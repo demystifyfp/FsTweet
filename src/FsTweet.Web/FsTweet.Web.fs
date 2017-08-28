@@ -7,6 +7,7 @@ open Suave.DotLiquid
 open System.IO
 open System.Reflection
 open Suave.Files
+open FSharp.Data.Sql
 
 let currentPath =
   Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
@@ -24,10 +25,23 @@ let serveAssets =
     path "/favicon.ico" >=> file faviconPath
   ]
 
+[<Literal>]
+let connString = 
+  "Server=127.0.0.1;Port=5432;Database=FsTweet;User Id=postgres;Password=test;"
+
+[<Literal>]
+let npgsqlLibPath = @"./../../packages/database/Npgsql/lib/net451"
+
+type Db = SqlDataProvider<
+            ConnectionString=connString,
+            DatabaseVendor=Common.DatabaseProviderTypes.POSTGRESQL,
+            ResolutionPath=npgsqlLibPath,
+            UseOptionTypes=true>
+
 [<EntryPoint>]
 let main argv =
-  initDotLiquid ()
 
+  initDotLiquid ()
   let app = 
     choose [
       serveAssets

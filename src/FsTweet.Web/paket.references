@@ -4,3 +4,6 @@ DotLiquid
 Suave.DotLiquid
 Suave.Experimental
 Chessie
+group Database
+SQLProvider
+Npgsql

@@ -13,4 +13,5 @@ source https://www.nuget.org/api/v2
 framework: net461
 
 nuget FluentMigrator
-nuget Npgsql
+nuget Npgsql 3.1.10
+nuget SQLProvider
