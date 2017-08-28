@@ -82,12 +82,8 @@ module Domain =
   | UsernameAlreadyExists
   | Error of Error
 
-  type CreateUserResponse = {
-    UserId : UserId
-    VerificationCode : VerificationCode
-  }
   type CreateUser = 
-    CreateUserRequest -> AsyncResult<CreateUserResponse, CreateUserError>
+    CreateUserRequest -> AsyncResult<UserId, CreateUserError>
 
   type SignupEmailRequest = {
     Username : Username
@@ -106,11 +102,11 @@ module Domain =
   let mapAsyncFailure f =
     Async.ofAsyncResult >> Async.map (mapFailure f) >> AR
 
-  let createUser (createUser : CreateUser) 
+  let signupUser (createUser : CreateUser) 
                  (sendEmail : SendSignupEmail) 
                  (req : UserSignupRequest) = asyncTrial {
 
-    let verificationCode = VerificationCode ""
+    let verificationCode = VerificationCode "12323"
 
     let createUserReq = {
       PasswordHash = PasswordHash.Create req.Password
@@ -118,7 +114,7 @@ module Domain =
       Email = req.EmailAddress
       VerificationCode = verificationCode
     }
-    let! res = 
+    let! userId = 
       createUser createUserReq
       |> mapAsyncFailure CreateUserError 
 
@@ -130,7 +126,25 @@ module Domain =
       sendEmail sendEmailReq
       |> mapAsyncFailure SendEmailError
 
-    return res.UserId
+    return userId
+  }
+
+module Persistence =
+  open Domain
+  open Chessie.ErrorHandling
+
+  let createUser createUserReq = asyncTrial {
+    printfn "%A created" createUserReq 
+    return UserId 1
+  }
+    
+module Email =
+  open Domain
+  open Chessie.ErrorHandling
+
+  let sendSignupEmail signupEmailReq = asyncTrial {
+    printfn "Email %A sent" signupEmailReq
+    return ()
   }
 
 module Suave =
@@ -157,28 +171,58 @@ module Suave =
 
   let signupTemplatePath = "user/signup.liquid" 
 
-  let handleUserSignup ctx = async {
+  let handleCreateUserError viewModel = function
+  | EmailAlreadyExists ->
+    let viewModel = {viewModel with Error = Some ("email already exists")}
+    page signupTemplatePath viewModel
+  | UsernameAlreadyExists ->
+    let viewModel = {viewModel with Error = Some ("username already exists")}
+    page signupTemplatePath viewModel
+  | Error ex ->
+    printfn "Server Error : %A" ex
+    let viewModel = {viewModel with Error = Some ("something went wrong")}
+    page signupTemplatePath viewModel
+
+  let mapUserSignupResult viewModel = function
+  | Ok _ -> Redirection.redirect "/"
+  | Bad errs ->
+    match List.head errs with
+    | CreateUserError cuErr ->
+      handleCreateUserError viewModel cuErr
+    | SendEmailError seErr ->
+      printfn "error while sending email : %A" seErr
+      Redirection.redirect "/"
+  
+  let handleUserSignupReq signupUser viewModel = 
+    signupUser  
+    >> Async.ofAsyncResult 
+    >> Async.map (mapUserSignupResult viewModel)
+
+  let handleUserSignup singupUser ctx = async {
     match bindEmptyForm ctx.request with
     | Choice1Of2 (vm : UserSignupViewModel) ->
       let result =
         UserSignupRequest.TryCreate (vm.Username, vm.Password, vm.Email)
-      let onSuccess (userSignupReq, _) =
-        printfn "%A" userSignupReq
-        Redirection.FOUND "/signup" ctx
-      let onFailure msgs =
+      match result with
+      | Ok (userSignupReq, _) ->
+        let! webpart = handleUserSignupReq singupUser vm userSignupReq
+        return! webpart ctx
+      | Bad msgs ->
         let viewModel = {vm with Error = Some (List.head msgs)}
-        page signupTemplatePath viewModel ctx
-      return! either onSuccess onFailure result
+        return! page signupTemplatePath viewModel ctx
     | Choice2Of2 err ->
       let viewModel = {emptyUserSignupViewModel with Error = Some err}
       return! page signupTemplatePath viewModel ctx
   }
 
   let webPart () =
+    let createUser = Persistence.createUser
+    let sendEmail = Email.sendSignupEmail
+    let singupUser = Domain.signupUser createUser sendEmail
     path "/signup" 
       >=> choose [
         GET >=> page signupTemplatePath emptyUserSignupViewModel
-        POST >=> handleUserSignup
+        POST >=> handleUserSignup singupUser
       ]
       
 
