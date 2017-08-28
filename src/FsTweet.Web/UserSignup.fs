@@ -2,6 +2,8 @@ namespace UserSignup
 
 module Domain =
   open Chessie.ErrorHandling
+  open BCrypt.Net
+
   type Username = private Username of string with
     static member TryCreate (username : string) =
       match username with
@@ -49,6 +51,87 @@ module Domain =
             EmailAddress = emailAddress
           }
         }
+
+  type PasswordHash = private PasswordHash of string with
+    member this.Value =
+      let (PasswordHash passwordHash) = this
+      passwordHash
+
+    member this.Match password =
+      BCrypt.Verify(password, this.Value) 
+
+    static member Create (password : Password) =
+      BCrypt.HashPassword(password.Value)
+      |> PasswordHash
+
+
+  type VerificationCode = VerificationCode of string
+  type CreateUserRequest = {
+    Username : Username
+    PasswordHash : PasswordHash
+    Email : EmailAddress
+    VerificationCode : VerificationCode
+  }
+
+  type UserId = UserId of int
+
+  type Error = System.Exception
+
+  type CreateUserError =
+  | EmailAlreadyExists
+  | UsernameAlreadyExists
+  | Error of Error
+
+  type CreateUserResponse = {
+    UserId : UserId
+    VerificationCode : VerificationCode
+  }
+  type CreateUser = 
+    CreateUserRequest -> AsyncResult<CreateUserResponse, CreateUserError>
+
+  type SignupEmailRequest = {
+    Username : Username
+    VerificationCode : VerificationCode
+  }
+  type SendEmailError = SendEmailError of Error
+  type SendSignupEmail = SignupEmailRequest -> AsyncResult<unit, SendEmailError>
+
+  type UserSignupError =
+  | CreateUserError of CreateUserError
+  | SendEmailError of SendEmailError
+
+  let mapFailure f = 
+    List.head >> f >> List.singleton |> mapFailure
+
+  let mapAsyncFailure f =
+    Async.ofAsyncResult >> Async.map (mapFailure f) >> AR
+
+  let createUser (createUser : CreateUser) 
+                 (sendEmail : SendSignupEmail) 
+                 (req : UserSignupRequest) = asyncTrial {
+
+    let verificationCode = VerificationCode ""
+
+    let createUserReq = {
+      PasswordHash = PasswordHash.Create req.Password
+      Username = req.Username
+      Email = req.EmailAddress
+      VerificationCode = verificationCode
+    }
+    let! res = 
+      createUser createUserReq
+      |> mapAsyncFailure CreateUserError 
+
+    let sendEmailReq = {
+      Username = req.Username
+      VerificationCode = verificationCode
+    }
+    let! sendEmailRes = 
+      sendEmail sendEmailReq
+      |> mapAsyncFailure SendEmailError
+
+    return res.UserId
+  }
 
 module Suave =
   open Suave

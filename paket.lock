@@ -1,6 +1,8 @@
 RESTRICTION: == net461
 NUGET
   remote: https://www.nuget.org/api/v2
+    BCrypt.Net-Next (2.1.1)
+      System.Text.RegularExpressions (>= 4.3)
     Chessie (0.6)
       FSharp.Core
     DotLiquid (2.0.64)
@@ -15,6 +17,7 @@ NUGET
     Suave.Experimental (2.2)
       FSharp.Core (>= 4.0.0.1)
       Suave (>= 2.2)
+    System.Text.RegularExpressions (4.3)
 
 GROUP Database
 RESTRICTION: == net461
