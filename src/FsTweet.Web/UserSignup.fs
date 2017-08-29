@@ -18,7 +18,7 @@ module Domain =
   type EmailAddress = private EmailAddress of string with
     member this.Value =
       let (EmailAddress emailAddress) = this
-      emailAddress
+      emailAddress  
     static member TryCreate (emailAddress : string) =
      try 
        new System.Net.Mail.MailAddress(emailAddress) |> ignore
@@ -94,17 +94,25 @@ module Domain =
 
   type SignupEmailRequest = {
     Username : Username
+    EmailAddress : EmailAddress
     VerificationCode : VerificationCode
   }
   type SendEmailError = SendEmailError of System.Exception
+  
   type SendSignupEmail = SignupEmailRequest -> AsyncResult<unit, SendEmailError>
 
   type UserSignupError =
   | CreateUserError of CreateUserError
   | SendEmailError of SendEmailError
 
-  let mapFailure f = 
-    List.head >> f >> List.singleton |> mapFailure
+  type SignupUser = 
+    CreateUser -> SendSignupEmail -> UserSignupRequest 
+      -> AsyncResult<UserId, UserSignupError>
+
+  let mapFailure f aResult = 
+    let mapFirstItem xs = 
+      List.head xs |> f |> List.singleton 
+    mapFailure mapFirstItem aResult
 
   let mapAsyncFailure f aResult =
     aResult
@@ -121,17 +129,18 @@ module Domain =
       Email = req.EmailAddress
       VerificationCode = VerificationCode.Create()
     }
+
     let! userId = 
       createUser createUserReq
-      |> mapAsyncFailure CreateUserError 
+      |> mapAsyncFailure CreateUserError
 
     let sendEmailReq = {
       Username = req.Username
       VerificationCode = createUserReq.VerificationCode
+      EmailAddress = createUserReq.Email
     }
-    let! sendEmailRes = 
-      sendEmail sendEmailReq
-      |> mapAsyncFailure SendEmailError
+    do! sendEmail sendEmailReq 
+        |> mapAsyncFailure SendEmailError
 
     return userId
   }
@@ -178,58 +187,28 @@ module Suave =
 
   let signupTemplatePath = "user/signup.liquid" 
 
-  let handleCreateUserError viewModel = function
-  | EmailAlreadyExists ->
-    let viewModel = {viewModel with Error = Some ("email already exists")}
-    page signupTemplatePath viewModel
-  | UsernameAlreadyExists ->
-    let viewModel = {viewModel with Error = Some ("username already exists")}
-    page signupTemplatePath viewModel
-  | Error ex ->
-    printfn "Server Error : %A" ex
-    let viewModel = {viewModel with Error = Some ("something went wrong")}
-    page signupTemplatePath viewModel
-
-  let mapUserSignupResult viewModel = function
-  | Ok _ -> Redirection.redirect "/"
-  | Bad errs ->
-    match List.head errs with
-    | CreateUserError cuErr ->
-      handleCreateUserError viewModel cuErr
-    | SendEmailError seErr ->
-      printfn "error while sending email : %A" seErr
-      Redirection.redirect "/"
-  
-  let handleUserSignupReq signupUser viewModel userSignupReq = 
-    signupUser userSignupReq
-    |> Async.ofAsyncResult 
-    |> Async.map (mapUserSignupResult viewModel)
-
-  let handleUserSignup singupUser ctx = async {
+  let handleUserSignup ctx = async {
     match bindEmptyForm ctx.request with
     | Choice1Of2 (vm : UserSignupViewModel) ->
       let result =
         UserSignupRequest.TryCreate (vm.Username, vm.Password, vm.Email)
-      match result with
-      | Ok (userSignupReq, _) ->
-        let! webpart = handleUserSignupReq singupUser vm userSignupReq
-        return! webpart ctx
-      | Bad msgs ->
+      let onSuccess (userSignupReq, _) =
+        printfn "%A" userSignupReq
+        Redirection.FOUND "/signup" ctx
+      let onFailure msgs =
         let viewModel = {vm with Error = Some (List.head msgs)}
-        return! page signupTemplatePath viewModel ctx
+        page signupTemplatePath viewModel ctx
+      return! either onSuccess onFailure result
     | Choice2Of2 err ->
       let viewModel = {emptyUserSignupViewModel with Error = Some err}
       return! page signupTemplatePath viewModel ctx
   }
 
   let webPart () =
-    let createUser = Persistence.createUser
-    let sendEmail = Email.sendSignupEmail
-    let singupUser = Domain.signupUser createUser sendEmail
     path "/signup" 
       >=> choose [
         GET >=> page signupTemplatePath emptyUserSignupViewModel
-        POST >=> handleUserSignup singupUser
+        POST >=> handleUserSignup
       ]
       
 
