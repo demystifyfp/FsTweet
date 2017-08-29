@@ -10,7 +10,7 @@ module Domain =
       match username with
       | null | ""  -> fail "Username should not be empty"
       | x when x.Length > 12 -> fail "Username should not be more than 12 characters"
-      | x -> Username x |> ok
+      | x -> x.Trim().ToLowerInvariant() |> Username |> ok
     member this.Value = 
       let (Username username) = this
       username
@@ -22,7 +22,7 @@ module Domain =
     static member TryCreate (emailAddress : string) =
      try 
        new System.Net.Mail.MailAddress(emailAddress) |> ignore
-       EmailAddress emailAddress |> ok
+       emailAddress.Trim().ToLowerInvariant() |>  EmailAddress  |> ok
      with
        | _ -> fail "Invalid Email Address"
 
