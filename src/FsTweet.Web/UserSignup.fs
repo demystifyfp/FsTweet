@@ -187,28 +187,78 @@ module Suave =
 
   let signupTemplatePath = "user/signup.liquid" 
 
-  let handleUserSignup ctx = async {
+  let handleCreateUserError viewModel = function 
+  | EmailAlreadyExists ->
+    let viewModel = 
+      {viewModel with Error = Some ("email already exists")}
+    page signupTemplatePath viewModel
+  | UsernameAlreadyExists ->
+    let viewModel = 
+      {viewModel with Error = Some ("username already exists")}
+    page signupTemplatePath viewModel
+  | Error ex ->
+    printfn "Server Error : %A" ex
+    let viewModel = 
+      {viewModel with Error = Some ("something went wrong")}
+    page signupTemplatePath viewModel
+
+  let handleSendEmailError viewModel err =
+    printfn "error while sending email : %A" err
+    let viewModel = 
+      {viewModel with Error = Some ("something went wrong")}
+    page signupTemplatePath viewModel
+
+  let handleUserSignupError viewModel errs = 
+    match List.head errs with
+    | CreateUserError cuErr ->
+      handleCreateUserError viewModel cuErr
+    | SendEmailError err ->
+      handleSendEmailError viewModel err
+
+  let handleUserSignupSuccess viewModel _ =
+    sprintf "/signup/success/%s" viewModel.Username
+    |> Redirection.FOUND 
+
+  let handleUserSignupResult viewModel result =
+    either 
+      (handleUserSignupSuccess viewModel)
+      (handleUserSignupError viewModel) result
+
+  let handleUserSignupAsyncResult viewModel aResult = 
+    aResult
+    |> Async.ofAsyncResult
+    |> Async.map (handleUserSignupResult viewModel)
+
+  let handleUserSignup signupUser ctx = async {
     match bindEmptyForm ctx.request with
     | Choice1Of2 (vm : UserSignupViewModel) ->
       let result =
         UserSignupRequest.TryCreate (vm.Username, vm.Password, vm.Email)
-      let onSuccess (userSignupReq, _) =
-        printfn "%A" userSignupReq
-        Redirection.FOUND "/signup" ctx
-      let onFailure msgs =
+      match result with
+      | Ok (userSignupReq, _) ->
+        let userSignupAsyncResult = signupUser userSignupReq
+        let! webpart =
+          handleUserSignupAsyncResult vm userSignupAsyncResult
+        return! webpart ctx
+      | Bad msgs ->
         let viewModel = {vm with Error = Some (List.head msgs)}
-        page signupTemplatePath viewModel ctx
-      return! either onSuccess onFailure result
+        return! page signupTemplatePath viewModel ctx
     | Choice2Of2 err ->
       let viewModel = {emptyUserSignupViewModel with Error = Some err}
       return! page signupTemplatePath viewModel ctx
   }
 
   let webPart () =
-    path "/signup" 
-      >=> choose [
-        GET >=> page signupTemplatePath emptyUserSignupViewModel
-        POST >=> handleUserSignup
-      ]
+    let createUser = Persistence.createUser
+    let sendSignupEmail = Email.sendSignupEmail
+    let signupUser = Domain.signupUser createUser sendSignupEmail
+    choose [
+      path "/signup" 
+        >=> choose [
+          GET >=> page signupTemplatePath emptyUserSignupViewModel
+          POST >=> handleUserSignup signupUser
+        ]
+      pathScan "/signup/success/%s" (page "user/signup_success.liquid")
+    ]
       
 
