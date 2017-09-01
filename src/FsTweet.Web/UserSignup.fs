@@ -165,8 +165,7 @@ module Persistence =
       | _ -> Error agEx
     | _ -> Error ex
 
-  let createUser getDbContext createUserReq = asyncTrial {
-    let ctx : DbContext = getDbContext()
+  let createUser (ctx : DbContext) createUserReq = asyncTrial {
     let users = ctx.Public.Users
     
     let newUser = users.Create()
@@ -279,8 +278,10 @@ module Suave =
       return! page signupTemplatePath viewModel ctx
   }
 
-  let webPart getDbContext =
-    let createUser = Persistence.createUser getDbContext
+  
+
+  let webPart dbCtx =
+    let createUser = Persistence.createUser dbCtx
     let sendSignupEmail = Email.sendSignupEmail
     let signupUser = Domain.signupUser createUser sendSignupEmail
     choose [

@@ -21,7 +21,7 @@ type Db = SqlDataProvider<
 
 type DbContext = Db.dataContext
 
-let getDbContext connString () : DbContext =
+let getDbContext (connString : string) : DbContext =
   let isMono = 
     System.Type.GetType ("Mono.Runtime") <> null
   match isMono with
@@ -31,10 +31,21 @@ let getDbContext connString () : DbContext =
       Timeout = System.TimeSpan.MaxValue
     } 
     Db.GetDataContext(connString, opts)
-  | _ -> Db.GetDataContext connString
+  | _ -> 
+    Db.GetDataContext connString
 
+// https://github.com/fsprojects/SQLProvider/issues/112#issuecomment-150917285
+let clearUpdatesOnError (ctx: DbContext) aChoice = async {
+  let! choice = aChoice
+  match choice with
+  | Choice2Of2 ex -> 
+    ctx.ClearUpdates() |> ignore
+  | _ -> ()
+  return choice
+}
 let submitUpdates (ctx: DbContext) = 
   ctx.SubmitUpdatesAsync()
   |> Async.Catch
+  |> clearUpdatesOnError ctx
   |> Async.map ofChoice
   |> AR
