@@ -2,6 +2,8 @@ module Database
 
 open FSharp.Data.Sql
 open Chessie.ErrorHandling
+open System
+open Npgsql
 
 [<Literal>]
 let private connString = 
@@ -21,11 +23,13 @@ type Db = SqlDataProvider<
 
 type DbContext = Db.dataContext
 
+
 let getDbContext (connString : string) : DbContext =
   let isMono = 
     System.Type.GetType ("Mono.Runtime") <> null
   match isMono with
   | true -> 
+    // SQLProvider doesn't support async transaction in mono
     let opts : Transactions.TransactionOptions = {
       IsolationLevel = Transactions.IsolationLevel.DontCreateTransaction
       Timeout = System.TimeSpan.MaxValue
@@ -49,3 +53,16 @@ let submitUpdates (ctx: DbContext) =
   |> clearUpdatesOnError ctx
   |> Async.map ofChoice
   |> AR
+
+let (|UniqueViolation|_|) constraintName (ex : Exception) =
+  match ex with
+  | :? AggregateException as agEx  ->
+    match agEx.Flatten().InnerException with 
+    | :? PostgresException as pgEx ->
+      if pgEx.ConstraintName = constraintName && 
+        pgEx.SqlState = "23505" then
+        Some ()
+      else 
+        None
+    | _ -> None
+  | _ -> None

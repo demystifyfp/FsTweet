@@ -149,20 +149,14 @@ module Persistence =
   open Domain
   open Chessie.ErrorHandling
   open Database
-  open Npgsql
   open System
+  
   let private ofException (ex : System.Exception) =
-    let todo txt = new Exception(txt)
     match ex with
-    | :? AggregateException as agEx  ->
-      match agEx.Flatten().InnerException with 
-      | :? PostgresException as pgEx ->
-        match pgEx.ConstraintName, pgEx.SqlState with 
-        | "IX_Users_Email", "23505" -> EmailAlreadyExists
-        | "IX_Users_Username", "23505" -> UsernameAlreadyExists
-        | _ -> 
-          Error pgEx
-      | _ -> Error agEx
+    | UniqueViolation "IX_Users_Email" _ ->
+      EmailAlreadyExists
+    | UniqueViolation "IX_Users_Username" _ -> 
+      UsernameAlreadyExists
     | _ -> Error ex
 
   let createUser (ctx : DbContext) createUserReq = asyncTrial {
