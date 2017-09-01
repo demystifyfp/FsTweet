@@ -9,7 +9,6 @@ open System.Reflection
 open Suave.Files
 open Database
 open System
-open System.Transactions
 
 let currentPath =
   Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
@@ -35,7 +34,7 @@ let main argv =
 
   let fsTweetConnString = 
    Environment.GetEnvironmentVariable  "FSTWEET_DB_CONN_STRING"
-  let dbCtx : DbContext = Db.GetDataContext(fsTweetConnString)
+  let dbCtx : DbContext = getDbContext fsTweetConnString
   
   let app = 
     choose [

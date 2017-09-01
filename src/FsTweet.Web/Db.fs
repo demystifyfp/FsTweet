@@ -1,7 +1,6 @@
 module Database
 
 open FSharp.Data.Sql
-open System.Transactions
 open Chessie.ErrorHandling
 
 [<Literal>]
@@ -22,13 +21,17 @@ type Db = SqlDataProvider<
 
 type DbContext = Db.dataContext
 
-let private submitUpdatesAsTransaction (ctx: DbContext) = async {
-  use transaction = 
-    new TransactionScope(TransactionScopeAsyncFlowOption.Enabled)
-  do! ctx.SubmitUpdatesAsync()
-  transaction.Complete()
-}
-
+let getDbContext (connString : string) : DbContext =
+  let isMono = 
+    System.Type.GetType ("Mono.Runtime") <> null
+  match isMono with
+  | true -> 
+    let opts : Transactions.TransactionOptions = {
+      IsolationLevel = Transactions.IsolationLevel.DontCreateTransaction
+      Timeout = System.TimeSpan.MaxValue
+    } 
+    Db.GetDataContext(connString, opts)
+  | _ -> Db.GetDataContext connString
 
 let submitUpdates (ctx: DbContext) = 
   ctx.SubmitUpdatesAsync()
