@@ -22,7 +22,16 @@ type Db = SqlDataProvider<
 
 type DbContext = Db.dataContext
 
+let private submitUpdatesAsTransaction (ctx: DbContext) = async {
+  use transaction = 
+    new TransactionScope(TransactionScopeAsyncFlowOption.Enabled)
+  do! ctx.SubmitUpdatesAsync()
+  transaction.Complete()
+}
+
+
 let submitUpdates (ctx: DbContext) = 
-  Async.Catch (ctx.SubmitUpdatesAsync())
+  ctx.SubmitUpdatesAsync()
+  |> Async.Catch
   |> Async.map ofChoice
   |> AR

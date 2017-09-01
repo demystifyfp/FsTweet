@@ -9,6 +9,7 @@ open System.Reflection
 open Suave.Files
 open Database
 open System
+open System.Transactions
 
 let currentPath =
   Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
@@ -29,7 +30,9 @@ let serveAssets =
 [<EntryPoint>]
 let main argv =
   initDotLiquid ()
-  
+  // use transaction = 
+  //   new TransactionScope(TransactionScopeAsyncFlowOption.Enabled)
+
   let fsTweetConnString = 
    Environment.GetEnvironmentVariable  "FSTWEET_DB_CONN_STRING"
   let dbCtx : DbContext = Db.GetDataContext(fsTweetConnString)
@@ -42,4 +45,5 @@ let main argv =
     ]
     
   startWebServer defaultConfig app
+  // transaction.Complete()
   0

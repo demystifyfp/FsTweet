@@ -149,9 +149,15 @@ module Persistence =
   open Domain
   open Chessie.ErrorHandling
   open Database
-
+  open Npgsql
   let private ofException (ex : System.Exception) =
-    Error ex
+    match ex with
+    | :? PostgresException as pgEx ->
+      match pgEx.ConstraintName, pgEx.ErrorCode with 
+      | "IX_Users_Email", 23505 -> EmailAlreadyExists
+      | "IX_Users_Username", 23505 -> UsernameAlreadyExists
+      | _ -> Error ex
+    | _ -> Error ex
 
   let createUser (ctx : DbContext) createUserReq = asyncTrial {
     let users = ctx.Public.Users
