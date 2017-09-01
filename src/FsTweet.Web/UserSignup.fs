@@ -148,10 +148,27 @@ module Domain =
 module Persistence =
   open Domain
   open Chessie.ErrorHandling
+  open Database
 
-  let createUser createUserReq = asyncTrial {
-    printfn "%A created" createUserReq 
-    return UserId 1
+  let private ofException (ex : System.Exception) =
+    Error ex
+
+  let createUser (ctx : DbContext) createUserReq = asyncTrial {
+    let users = ctx.Public.Users
+    
+    let newUser = users.Create()
+    newUser.Email <- createUserReq.Email.Value
+    newUser.EmailVerificationCode <- 
+      createUserReq.VerificationCode.Value
+    newUser.Username <- createUserReq.Username.Value
+    newUser.IsEmailVerified <- false
+    newUser.PasswordHash <- createUserReq.PasswordHash.Value
+    
+
+    do! submitUpdates ctx |> mapAsyncFailure ofException
+
+    printfn "User Created %A" newUser.Id
+    return UserId newUser.Id
   }
     
 module Email =
@@ -171,6 +188,7 @@ module Suave =
   open Suave.Form
   open Domain
   open Chessie.ErrorHandling
+  open Database
 
   type UserSignupViewModel = {
     Username : string
@@ -248,8 +266,8 @@ module Suave =
       return! page signupTemplatePath viewModel ctx
   }
 
-  let webPart () =
-    let createUser = Persistence.createUser
+  let webPart (ctx : DbContext) =
+    let createUser = Persistence.createUser ctx
     let sendSignupEmail = Email.sendSignupEmail
     let signupUser = Domain.signupUser createUser sendSignupEmail
     choose [

@@ -7,6 +7,8 @@ open Suave.DotLiquid
 open System.IO
 open System.Reflection
 open Suave.Files
+open Database
+open System
 
 let currentPath =
   Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
@@ -26,13 +28,17 @@ let serveAssets =
 
 [<EntryPoint>]
 let main argv =
-
   initDotLiquid ()
+  
+  let fsTweetConnString = 
+   Environment.GetEnvironmentVariable  "FSTWEET_DB_CONN_STRING"
+  let dbCtx : DbContext = Db.GetDataContext(fsTweetConnString)
+  
   let app = 
     choose [
       serveAssets
       path "/" >=> page "guest/home.liquid" ""
-      UserSignup.Suave.webPart ()
+      UserSignup.Suave.webPart dbCtx
     ]
     
   startWebServer defaultConfig app

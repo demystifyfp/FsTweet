@@ -31,6 +31,8 @@ let connString =
   environVarOrDefault 
     "FSTWEET_DB_CONN_STRING"
     @"Server=127.0.0.1;Port=5432;Database=FsTweet;User Id=postgres;Password=test;"
+
+setEnvironVar "FSTWEET_DB_CONN_STRING" connString
 let dbConnection = ConnectionString (connString, DatabaseProvider.PostgreSQL)
 
 Target "RunMigrations" (fun _ -> 

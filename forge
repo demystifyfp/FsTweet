@@ -1,0 +1,14 @@
+Paket version 5.91.0
+Adding Npgsql 3.1.10 to /Users/tamizhvendan/TamizhWorks/demystifyfp/fsharp/FsTweet/paket.dependencies into group Database
+Skipping resolver for group Database since it is already up-to-date
+Skipping resolver for group Main since it is already up-to-date
+/Users/tamizhvendan/TamizhWorks/demystifyfp/fsharp/FsTweet/paket.lock is already up-to-date
+Dependencies files saved to /Users/tamizhvendan/TamizhWorks/demystifyfp/fsharp/FsTweet/paket.dependencies
+Adding package Npgsql to /Users/tamizhvendan/TamizhWorks/demystifyfp/fsharp/FsTweet/src/FsTweet.Web/paket.references into group Database
+References file saved to /Users/tamizhvendan/TamizhWorks/demystifyfp/fsharp/FsTweet/src/FsTweet.Web/paket.references
+ - Creating model and downloading packages.
+ - src/FsTweet.Db.Migrations/paket.references -> src/FsTweet.Db.Migrations/FsTweet.Db.Migrations.fsproj
+ - src/FsTweet.Web/paket.references -> src/FsTweet.Web/FsTweet.Web.fsproj
+Performance:
+ - Disk IO: 98 milliseconds
+ - Runtime: 2 seconds

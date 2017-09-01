@@ -15,3 +15,4 @@ framework: net461
 
 nuget FluentMigrator
 nuget Npgsql 3.1.10
+nuget SQLProvider
