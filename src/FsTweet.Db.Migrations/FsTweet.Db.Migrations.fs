@@ -9,8 +9,8 @@ type CreateUserTable()=
   override this.Up() = 
     base.Create.Table("Users")
       .WithColumn("Id").AsInt32().PrimaryKey().Identity()
-      .WithColumn("Username").AsString(12).NotNullable()
-      .WithColumn("Email").AsString(254).NotNullable()
+      .WithColumn("Username").AsString(12).Unique().NotNullable()
+      .WithColumn("Email").AsString(254).Unique().NotNullable()
       .WithColumn("PasswordHash").AsString().NotNullable()
       .WithColumn("EmailVerificationCode").AsString().NotNullable()
       .WithColumn("IsEmailVerified").AsBoolean()
