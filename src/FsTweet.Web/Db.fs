@@ -21,7 +21,7 @@ type Db = SqlDataProvider<
 
 type DbContext = Db.dataContext
 
-let getDbContext (connString : string) : DbContext =
+let getDbContext connString () : DbContext =
   let isMono = 
     System.Type.GetType ("Mono.Runtime") <> null
   match isMono with

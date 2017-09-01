@@ -150,16 +150,23 @@ module Persistence =
   open Chessie.ErrorHandling
   open Database
   open Npgsql
+  open System
   let private ofException (ex : System.Exception) =
+    let todo txt = new Exception(txt)
     match ex with
-    | :? PostgresException as pgEx ->
-      match pgEx.ConstraintName, pgEx.ErrorCode with 
-      | "IX_Users_Email", 23505 -> EmailAlreadyExists
-      | "IX_Users_Username", 23505 -> UsernameAlreadyExists
-      | _ -> Error ex
+    | :? AggregateException as agEx  ->
+      match agEx.Flatten().InnerException with 
+      | :? PostgresException as pgEx ->
+        match pgEx.ConstraintName, pgEx.SqlState with 
+        | "IX_Users_Email", "23505" -> EmailAlreadyExists
+        | "IX_Users_Username", "23505" -> UsernameAlreadyExists
+        | _ -> 
+          Error pgEx
+      | _ -> Error agEx
     | _ -> Error ex
 
-  let createUser (ctx : DbContext) createUserReq = asyncTrial {
+  let createUser getDbContext createUserReq = asyncTrial {
+    let ctx : DbContext = getDbContext()
     let users = ctx.Public.Users
     
     let newUser = users.Create()
@@ -272,8 +279,8 @@ module Suave =
       return! page signupTemplatePath viewModel ctx
   }
 
-  let webPart (ctx : DbContext) =
-    let createUser = Persistence.createUser ctx
+  let webPart getDbContext =
+    let createUser = Persistence.createUser getDbContext
     let sendSignupEmail = Email.sendSignupEmail
     let signupUser = Domain.signupUser createUser sendSignupEmail
     choose [
