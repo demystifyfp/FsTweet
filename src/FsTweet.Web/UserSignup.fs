@@ -159,7 +159,8 @@ module Persistence =
       UsernameAlreadyExists
     | _ -> Error ex
 
-  let createUser (ctx : DbContext) createUserReq = asyncTrial {
+  let createUser (getDbctx : GetDbContext) createUserReq = asyncTrial {
+    let ctx = getDbctx ()
     let users = ctx.Public.Users
     
     let newUser = users.Create()
@@ -274,8 +275,8 @@ module Suave =
 
   
 
-  let webPart dbCtx =
-    let createUser = Persistence.createUser dbCtx
+  let webPart getDbCtx =
+    let createUser = Persistence.createUser getDbCtx
     let sendSignupEmail = Email.sendSignupEmail
     let signupUser = Domain.signupUser createUser sendSignupEmail
     choose [
