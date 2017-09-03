@@ -31,12 +31,12 @@ let main argv =
   initDotLiquid ()
   let fsTweetConnString = 
    Environment.GetEnvironmentVariable  "FSTWEET_DB_CONN_STRING"
-  let getDbCtx = dbContext fsTweetConnString
+  let getDataCtx = dataContext fsTweetConnString
   let app = 
     choose [
       serveAssets
       path "/" >=> page "guest/home.liquid" ""
-      UserSignup.Suave.webPart getDbCtx
+      UserSignup.Suave.webPart getDataCtx
     ]
     
   startWebServer defaultConfig app

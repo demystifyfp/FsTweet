@@ -25,7 +25,7 @@ type DataContext = Db.dataContext
 
 
 type GetDataContext = unit -> DataContext
-let dbContext (connString : string) : GetDataContext =
+let dataContext (connString : string) : GetDataContext =
   let isMono = 
     System.Type.GetType ("Mono.Runtime") <> null
   match isMono with
