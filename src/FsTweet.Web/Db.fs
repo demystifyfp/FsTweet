@@ -21,11 +21,11 @@ type Db = SqlDataProvider<
             ResolutionPath=npgsqlLibPath,
             UseOptionTypes=true>
 
-type DbContext = Db.dataContext
+type DataContext = Db.dataContext
 
 
-type GetDbContext = unit -> DbContext
-let dbContext (connString : string) : GetDbContext =
+type GetDataContext = unit -> DataContext
+let dbContext (connString : string) : GetDataContext =
   let isMono = 
     System.Type.GetType ("Mono.Runtime") <> null
   match isMono with
@@ -40,7 +40,7 @@ let dbContext (connString : string) : GetDbContext =
     fun _ -> Db.GetDataContext connString
 
 
-let submitUpdates (ctx: DbContext) = 
+let submitUpdates (ctx: DataContext) = 
   ctx.SubmitUpdatesAsync()
   |> Async.Catch
   |> Async.map ofChoice

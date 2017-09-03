@@ -159,7 +159,7 @@ module Persistence =
       UsernameAlreadyExists
     | _ -> Error ex
 
-  let createUser (getDbctx : GetDbContext) createUserReq = asyncTrial {
+  let createUser (getDbctx : GetDataContext) createUserReq = asyncTrial {
     let ctx = getDbctx ()
     let users = ctx.Public.Users
     
