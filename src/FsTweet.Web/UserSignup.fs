@@ -151,7 +151,7 @@ module Persistence =
   open Database
   open System
   
-  let private ofException (ex : System.Exception) =
+  let private mapException (ex : System.Exception) =
     match ex with
     | UniqueViolation "IX_Users_Email" _ ->
       EmailAlreadyExists
@@ -172,7 +172,8 @@ module Persistence =
     newUser.PasswordHash <- createUserReq.PasswordHash.Value
     
 
-    do! submitUpdates ctx |> mapAsyncFailure ofException
+    do! submitUpdates ctx 
+        |> mapAsyncFailure mapException
 
     printfn "User Created %A" newUser.Id
     return UserId newUser.Id

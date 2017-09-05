@@ -51,10 +51,8 @@ let (|UniqueViolation|_|) constraintName (ex : Exception) =
   | :? AggregateException as agEx  ->
     match agEx.Flatten().InnerException with 
     | :? PostgresException as pgEx ->
-      if pgEx.ConstraintName = constraintName && 
-        pgEx.SqlState = "23505" then
-        Some ()
-      else 
-        None
+      match pgEx.ConstraintName, pgEx.SqlState with
+      | constraintName, "23505" -> Some ()
+      | _ -> None
     | _ -> None
   | _ -> None
