@@ -26,3 +26,11 @@ NUGET
     FluentMigrator (1.6.2)
     Npgsql (3.1.10)
     SQLProvider (1.1.7)
+
+GROUP Email
+RESTRICTION: == net461
+NUGET
+  remote: https://www.nuget.org/api/v2
+    Newtonsoft.Json (10.0.3)
+    Postmark (2.2.1)
+      Newtonsoft.Json (>= 6.0.6)

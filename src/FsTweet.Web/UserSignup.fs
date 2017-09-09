@@ -182,9 +182,23 @@ module Persistence =
 module Email =
   open Domain
   open Chessie.ErrorHandling
+  open Email
 
-  let sendSignupEmail signupEmailReq = asyncTrial {
-    printfn "Email %A sent" signupEmailReq
+  let mapSendEmailException ex =
+    Domain.SendEmailError ex
+  let sendSignupEmail sendEmail signupEmailReq = asyncTrial {
+    let verificationCode =
+      signupEmailReq.VerificationCode.Value
+    let placeHolders = 
+      Map.empty
+        .Add("verification_code", verificationCode)
+        .Add("username", signupEmailReq.Username.Value)
+    let email = {
+      To = signupEmailReq.EmailAddress.Value
+      TemplateId = int64(3160924)
+      PlaceHolders = placeHolders
+    }
+    do! sendEmail email |> mapAsyncFailure mapSendEmailException
     return ()
   }
 
@@ -276,9 +290,9 @@ module Suave =
 
   
 
-  let webPart getDataCtx =
+  let webPart getDataCtx sendEmail =
     let createUser = Persistence.createUser getDataCtx
-    let sendSignupEmail = Email.sendSignupEmail
+    let sendSignupEmail = Email.sendSignupEmail sendEmail
     let signupUser = Domain.signupUser createUser sendSignupEmail
     choose [
       path "/signup" 

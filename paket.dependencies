@@ -16,3 +16,9 @@ framework: net461
 nuget FluentMigrator
 nuget Npgsql 3.1.10
 nuget SQLProvider
+
+group Email
+source https://www.nuget.org/api/v2
+framework: net461
+
+nuget Postmark

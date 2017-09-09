@@ -41,6 +41,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Db.fs" />
+    <Compile Include="Email.fs" />
     <Compile Include="UserSignup.fs" />
     <Compile Include="FsTweet.Web.fs" />
   </ItemGroup>
@@ -74,6 +75,33 @@
       <ItemGroup>
         <Reference Include="FSharp.Data.SqlProvider">
           <HintPath>..\..\packages\database\SQLProvider\lib\FSharp.Data.SqlProvider.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6.1'">
+      <ItemGroup>
+        <Reference Include="Newtonsoft.Json">
+          <HintPath>..\..\packages\email\Newtonsoft.Json\lib\net45\Newtonsoft.Json.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6.1'">
+      <ItemGroup>
+        <Reference Include="Postmark">
+          <HintPath>..\..\packages\email\Postmark\lib\net45\Postmark.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+        <Reference Include="Postmark.Convenience">
+          <HintPath>..\..\packages\email\Postmark\lib\net45\Postmark.Convenience.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>

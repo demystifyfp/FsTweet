@@ -8,3 +8,5 @@ BCrypt.Net-Next
 group Database
 SQLProvider
 Npgsql
+group Email
+Postmark
