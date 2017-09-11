@@ -34,8 +34,8 @@ let main argv =
   let fsTweetConnString = 
    Environment.GetEnvironmentVariable  "FSTWEET_DB_CONN_STRING"
 
-  let postmarkToken =
-    Environment.GetEnvironmentVariable "FSTWEET_POSTMARK_TOKEN"
+  let serverToken =
+    Environment.GetEnvironmentVariable "FSTWEET_POSTMARK_SERVER_TOKEN"
 
   let senderEmailAddress =
     Environment.GetEnvironmentVariable "FSTWEET_SENDER_EMAIL_ADDRESS"
@@ -46,7 +46,7 @@ let main argv =
   let sendEmail = 
     match env with
     | "dev" -> consoleSendEmail
-    | _ -> initSendEmail senderEmailAddress postmarkToken
+    | _ -> initSendEmail senderEmailAddress serverToken
 
   let getDataCtx = dataContext fsTweetConnString
   let app = 

@@ -184,8 +184,6 @@ module Email =
   open Chessie.ErrorHandling
   open Email
 
-  let mapSendEmailException ex =
-    Domain.SendEmailError ex
   let sendSignupEmail sendEmail signupEmailReq = asyncTrial {
     let verificationCode =
       signupEmailReq.VerificationCode.Value
@@ -198,8 +196,8 @@ module Email =
       TemplateId = int64(3160924)
       PlaceHolders = placeHolders
     }
-    do! sendEmail email |> mapAsyncFailure mapSendEmailException
-    return ()
+    do! sendEmail email 
+      |> mapAsyncFailure Domain.SendEmailError
   }
 
 module Suave =

@@ -12,9 +12,9 @@ type Email = {
 
 type SendEmail = Email -> AsyncResult<unit, Exception>
 
-let mapPostmarkResponse (response : Choice<PostmarkResponse, Exception>) =
+let mapPostmarkResponse response =
   match response with
-  | Choice1Of2 postmarkRes ->
+  | Choice1Of2 ( postmarkRes : PostmarkResponse) ->
     match postmarkRes.Status with
     | PostmarkStatus.Success -> 
       ok ()
@@ -37,10 +37,9 @@ let sendEmailViaPostmark senderEmailAddress (client : PostmarkClient) email =
   |> Async.map mapPostmarkResponse
   |> AR
 
-let initSendEmail senderEmailAddress emailClientToken : SendEmail =
-  let client = new PostmarkClient(emailClientToken)
+let initSendEmail senderEmailAddress serverToken : SendEmail =
+  let client = new PostmarkClient(serverToken)
   sendEmailViaPostmark senderEmailAddress client
-
 
 let consoleSendEmail email = asyncTrial {
   printfn "%A" email
