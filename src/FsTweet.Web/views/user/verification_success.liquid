@@ -1,0 +1,14 @@
+{% extends "master_page.liquid" %}
+
+{% block head %}
+  <title> Email Verified </title>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <p class="well"> 
+    Hi {{ model }}, Your email address has been verified. 
+    Now you can <a href="/login">login</a>!
+  </p>
+</div>
+{% endblock %}

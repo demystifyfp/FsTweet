@@ -46,13 +46,20 @@ let submitUpdates (ctx: DataContext) =
   |> Async.map ofChoice
   |> AR
 
+let asyncQuery queryable =
+  queryable
+  |> Async.Catch
+  |> Async.map ofChoice
+  |> AR 
+
 let (|UniqueViolation|_|) constraintName (ex : Exception) =
   match ex with
   | :? AggregateException as agEx  ->
     match agEx.Flatten().InnerException with 
     | :? PostgresException as pgEx ->
-      match pgEx.ConstraintName, pgEx.SqlState with
-      | constraintName, "23505" -> Some ()
-      | _ -> None
+      if pgEx.ConstraintName = constraintName && 
+          pgEx.SqlState = "23505" then
+        Some ()
+      else None
     | _ -> None
   | _ -> None

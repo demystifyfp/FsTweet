@@ -61,6 +61,13 @@ module Domain =
     static member Create (password : Password) =
       BCrypt.HashPassword(password.Value)
       |> PasswordHash
+
+
+  let base64URLEncoding bytes =
+    let base64String = 
+       System.Convert.ToBase64String bytes
+    base64String.TrimEnd([|'='|])
+      .Replace('+', '-').Replace('/', '_')
       
   type VerificationCode = private VerificationCode of string with
     member this.Value =
@@ -72,7 +79,7 @@ module Domain =
       let b : byte [] = 
         Array.zeroCreate verificationCodeLength
       rngCsp.GetBytes(b)
-      System.Convert.ToBase64String b
+      base64URLEncoding b
       |> VerificationCode 
 
   type CreateUserRequest = {
@@ -91,7 +98,6 @@ module Domain =
 
   type CreateUser = 
     CreateUserRequest -> AsyncResult<UserId, CreateUserError>
-
   type SignupEmailRequest = {
     Username : Username
     EmailAddress : EmailAddress
@@ -108,6 +114,8 @@ module Domain =
   type SignupUser = 
     CreateUser -> SendSignupEmail -> UserSignupRequest 
       -> AsyncResult<UserId, UserSignupError>
+ 
+  type VerifyUser = string -> AsyncResult<string option, System.Exception>
 
   let mapFailure f aResult = 
     let mapFirstItem xs = 
@@ -150,6 +158,7 @@ module Persistence =
   open Chessie.ErrorHandling
   open Database
   open System
+  open FSharp.Data.Sql
   
   let private mapException (ex : System.Exception) =
     match ex with
@@ -177,6 +186,22 @@ module Persistence =
 
     printfn "User Created %A" newUser.Id
     return UserId newUser.Id
+  }
+
+  let verifyUser (getDataCtx : GetDataContext) (verificationCode : string) = asyncTrial {
+    let ctx = getDataCtx ()
+    let! userToVerify = 
+      query {
+        for u in ctx.Public.Users do
+        where (u.EmailVerificationCode = verificationCode)
+      } |> Seq.tryHeadAsync |> asyncQuery
+    match userToVerify with
+    | None -> return None
+    | Some user ->
+      user.EmailVerificationCode <- ""
+      user.IsEmailVerified <- true
+      do! submitUpdates ctx
+      return Some user.Username
   }
     
 module Email =
@@ -286,12 +311,36 @@ module Suave =
       return! page signupTemplatePath viewModel ctx
   }
 
+  let handleVerifyUserResult (result : Result<string option, System.Exception>) =
+    let onSucces (username, _ )=
+      match username with
+      | Some username ->
+        page "user/verification_success.liquid" username
+      | _ ->
+        page "not_found.liquid" "invalid verification code"
+    let onFailure errs =
+      let ex = List.head errs
+      printfn "%A" ex
+      page "server_error.liquid" "error while verifying email"
+    either onSucces onFailure result
+
+  let handleVerifyUserAsyncResult aResult =
+    aResult
+    |> Async.ofAsyncResult
+    |> Async.map handleVerifyUserResult
+
+  let handleSignupVerify (verifyUser : VerifyUser) verificationCode ctx = async {
+    let verifyUserAsyncResult = verifyUser verificationCode
+    let! webpart = handleVerifyUserAsyncResult verifyUserAsyncResult
+    return! webpart ctx
+  }
   
 
   let webPart getDataCtx sendEmail =
     let createUser = Persistence.createUser getDataCtx
     let sendSignupEmail = Email.sendSignupEmail sendEmail
     let signupUser = Domain.signupUser createUser sendSignupEmail
+    let verifyUser = Persistence.verifyUser getDataCtx
     choose [
       path "/signup" 
         >=> choose [
@@ -299,6 +348,7 @@ module Suave =
           POST >=> handleUserSignup signupUser
         ]
       pathScan "/signup/success/%s" (page "user/signup_success.liquid")
+      pathScan "/signup/verify/%s" (handleSignupVerify verifyUser)
     ]
       
 
