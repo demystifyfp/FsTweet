@@ -5,12 +5,22 @@ module Domain =
   open BCrypt.Net
   open System.Security.Cryptography
 
+  let mapFailure f aResult = 
+    let mapFirstItem xs = 
+      List.head xs |> f |> List.singleton 
+    mapFailure mapFirstItem aResult
+
   type Username = private Username of string with
     static member TryCreate (username : string) =
       match username with
       | null | ""  -> fail "Username should not be empty"
       | x when x.Length > 12 -> fail "Username should not be more than 12 characters"
       | x -> x.Trim().ToLowerInvariant() |> Username |> ok
+    static member ToAsyncResult username =
+      Username.TryCreate username
+      |> mapFailure (System.Exception)
+      |> async.Return
+      |> AR
     member this.Value = 
       let (Username username) = this
       username
@@ -115,12 +125,9 @@ module Domain =
     CreateUser -> SendSignupEmail -> UserSignupRequest 
       -> AsyncResult<UserId, UserSignupError>
  
-  type VerifyUser = string -> AsyncResult<string option, System.Exception>
+  type VerifyUser = string -> AsyncResult<Username option, System.Exception>
 
-  let mapFailure f aResult = 
-    let mapFirstItem xs = 
-      List.head xs |> f |> List.singleton 
-    mapFailure mapFirstItem aResult
+  
 
   let mapAsyncFailure f aResult =
     aResult
@@ -201,7 +208,8 @@ module Persistence =
       user.EmailVerificationCode <- ""
       user.IsEmailVerified <- true
       do! submitUpdates ctx
-      return Some user.Username
+      let! username = Username.ToAsyncResult user.Username
+      return Some username
   }
     
 module Email =
@@ -311,15 +319,15 @@ module Suave =
       return! page signupTemplatePath viewModel ctx
   }
 
-  let handleVerifyUserResult (result : Result<string option, System.Exception>) =
+  let handleVerifyUserResult result =
     let onSucces (username, _ )=
       match username with
-      | Some username ->
-        page "user/verification_success.liquid" username
+      | Some (username : Username) ->
+        page "user/verification_success.liquid" username.Value
       | _ ->
         page "not_found.liquid" "invalid verification code"
     let onFailure errs =
-      let ex = List.head errs
+      let ex : System.Exception = List.head errs
       printfn "%A" ex
       page "server_error.liquid" "error while verifying email"
     either onSucces onFailure result
