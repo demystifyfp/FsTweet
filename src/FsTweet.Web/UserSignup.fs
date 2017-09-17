@@ -19,7 +19,7 @@ module Domain =
     static member ToAsyncResult username =
       Username.TryCreate username
       |> mapFailure (System.Exception)
-      |> async.Return
+      |> Async.singleton
       |> AR
     member this.Value = 
       let (Username username) = this
