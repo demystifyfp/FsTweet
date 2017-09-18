@@ -23,7 +23,6 @@ type Db = SqlDataProvider<
 
 type DataContext = Db.dataContext
 
-
 type GetDataContext = unit -> DataContext
 let dataContext (connString : string) : GetDataContext =
   let isMono = 
@@ -46,7 +45,7 @@ let submitUpdates (ctx: DataContext) =
   |> Async.map ofChoice
   |> AR
 
-let asyncQuery queryable =
+let toAsyncResult queryable =
   queryable
   |> Async.Catch
   |> Async.map ofChoice

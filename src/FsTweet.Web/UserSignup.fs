@@ -16,7 +16,7 @@ module Domain =
       | null | ""  -> fail "Username should not be empty"
       | x when x.Length > 12 -> fail "Username should not be more than 12 characters"
       | x -> x.Trim().ToLowerInvariant() |> Username |> ok
-    static member ToAsyncResult username =
+    static member TryCreateAsync username =
       Username.TryCreate username
       |> mapFailure (System.Exception)
       |> Async.singleton
@@ -201,14 +201,14 @@ module Persistence =
       query {
         for u in ctx.Public.Users do
         where (u.EmailVerificationCode = verificationCode)
-      } |> Seq.tryHeadAsync |> asyncQuery
+      } |> Seq.tryHeadAsync |> toAsyncResult
     match userToVerify with
     | None -> return None
     | Some user ->
       user.EmailVerificationCode <- ""
       user.IsEmailVerified <- true
       do! submitUpdates ctx
-      let! username = Username.ToAsyncResult user.Username
+      let! username = Username.TryCreateAsync user.Username
       return Some username
   }
     
