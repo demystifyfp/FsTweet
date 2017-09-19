@@ -319,23 +319,22 @@ module Suave =
       return! page signupTemplatePath viewModel ctx
   }
 
-  let handleVerifyUserResult result =
-    let onSucces (username, _ )=
-      match username with
-      | Some (username : Username) ->
-        page "user/verification_success.liquid" username.Value
-      | _ ->
-        page "not_found.liquid" "invalid verification code"
-    let onFailure errs =
-      let ex : System.Exception = List.head errs
-      printfn "%A" ex
-      page "server_error.liquid" "error while verifying email"
-    either onSucces onFailure result
+  let onVerificationSuccess (username, _ )=
+    match username with
+    | Some (username : Username) ->
+      page "user/verification_success.liquid" username.Value
+    | _ ->
+      page "not_found.liquid" "invalid verification code"
+
+  let onVerificationFailure errs =
+    let ex : System.Exception = List.head errs
+    printfn "%A" ex
+    page "server_error.liquid" "error while verifying email"
 
   let handleVerifyUserAsyncResult aResult =
     aResult
     |> Async.ofAsyncResult
-    |> Async.map handleVerifyUserResult
+    |> Async.map (either onVerificationSuccess onVerificationFailure)
 
   let handleSignupVerify (verifyUser : VerifyUser) verificationCode ctx = async {
     let verifyUserAsyncResult = verifyUser verificationCode
