@@ -4,6 +4,7 @@ open FSharp.Data.Sql
 open Chessie.ErrorHandling
 open System
 open Npgsql
+open Chessie
 
 [<Literal>]
 let private connString = 
@@ -41,15 +42,7 @@ let dataContext (connString : string) : GetDataContext =
 
 let submitUpdates (ctx: DataContext) = 
   ctx.SubmitUpdatesAsync()
-  |> Async.Catch
-  |> Async.map ofChoice
-  |> AR
-
-let toAsyncResult queryable =
-  queryable
-  |> Async.Catch
-  |> Async.map ofChoice
-  |> AR 
+  |> AR.catch
 
 let (|UniqueViolation|_|) constraintName (ex : Exception) =
   match ex with

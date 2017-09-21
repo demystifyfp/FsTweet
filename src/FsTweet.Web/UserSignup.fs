@@ -4,11 +4,7 @@ module Domain =
   open Chessie.ErrorHandling
   open BCrypt.Net
   open System.Security.Cryptography
-
-  let mapFailure f aResult = 
-    let mapFirstItem xs = 
-      List.head xs |> f |> List.singleton 
-    mapFailure mapFirstItem aResult
+  open Chessie
 
   type Username = private Username of string with
     static member TryCreate (username : string) =
@@ -129,11 +125,6 @@ module Domain =
 
   
 
-  let mapAsyncFailure f aResult =
-    aResult
-    |> Async.ofAsyncResult 
-    |> Async.map (mapFailure f) |> AR
-
   let signupUser (createUser : CreateUser) 
                  (sendEmail : SendSignupEmail) 
                  (req : UserSignupRequest) = asyncTrial {
@@ -147,7 +138,7 @@ module Domain =
 
     let! userId = 
       createUser createUserReq
-      |> mapAsyncFailure CreateUserError
+      |> AR.mapFailure CreateUserError
 
     let sendEmailReq = {
       Username = req.Username
@@ -155,7 +146,7 @@ module Domain =
       EmailAddress = createUserReq.Email
     }
     do! sendEmail sendEmailReq 
-        |> mapAsyncFailure SendEmailError
+        |> AR.mapFailure SendEmailError
 
     return userId
   }
@@ -166,6 +157,7 @@ module Persistence =
   open Database
   open System
   open FSharp.Data.Sql
+  open Chessie
   
   let private mapException (ex : System.Exception) =
     match ex with
@@ -189,7 +181,7 @@ module Persistence =
     
 
     do! submitUpdates ctx 
-        |> mapAsyncFailure mapException
+        |> AR.mapFailure mapException
 
     printfn "User Created %A" newUser.Id
     return UserId newUser.Id
@@ -201,7 +193,7 @@ module Persistence =
       query {
         for u in ctx.Public.Users do
         where (u.EmailVerificationCode = verificationCode)
-      } |> Seq.tryHeadAsync |> toAsyncResult
+      } |> Seq.tryHeadAsync |> AR.catch
     match userToVerify with
     | None -> return None
     | Some user ->
@@ -216,6 +208,7 @@ module Email =
   open Domain
   open Chessie.ErrorHandling
   open Email
+  open Chessie
 
   let sendSignupEmail sendEmail signupEmailReq = asyncTrial {
     let verificationCode =
@@ -230,7 +223,7 @@ module Email =
       PlaceHolders = placeHolders
     }
     do! sendEmail email 
-      |> mapAsyncFailure Domain.SendEmailError
+      |> AR.mapFailure Domain.SendEmailError
   }
 
 module Suave =
@@ -242,6 +235,7 @@ module Suave =
   open Domain
   open Chessie.ErrorHandling
   open Database
+  open Chessie
 
   type UserSignupViewModel = {
     Username : string
@@ -279,21 +273,21 @@ module Suave =
       {viewModel with Error = Some ("something went wrong")}
     page signupTemplatePath viewModel
 
-  let handleUserSignupError viewModel errs = 
-    match List.head errs with
+  let onUserSignupFailure viewModel err = 
+    match err with
     | CreateUserError cuErr ->
       handleCreateUserError viewModel cuErr
     | SendEmailError err ->
       handleSendEmailError viewModel err
 
-  let handleUserSignupSuccess viewModel _ =
+  let onUserSignupSuccess viewModel _ =
     sprintf "/signup/success/%s" viewModel.Username
     |> Redirection.FOUND 
 
   let handleUserSignupResult viewModel result =
     either 
-      (handleUserSignupSuccess viewModel)
-      (handleUserSignupError viewModel) result
+      (onUserSignupSuccess viewModel)
+      (onUserSignupFailure viewModel) result
 
   let handleUserSignupAsyncResult viewModel aResult = 
     aResult
@@ -319,15 +313,14 @@ module Suave =
       return! page signupTemplatePath viewModel ctx
   }
 
-  let onVerificationSuccess (username, _ )=
+  let onVerificationSuccess username =
     match username with
     | Some (username : Username) ->
       page "user/verification_success.liquid" username.Value
     | _ ->
       page "not_found.liquid" "invalid verification code"
 
-  let onVerificationFailure errs =
-    let ex : System.Exception = List.head errs
+  let onVerificationFailure (ex : System.Exception) =
     printfn "%A" ex
     page "server_error.liquid" "error while verifying email"
 
