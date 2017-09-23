@@ -15,13 +15,15 @@ let onFailure f xs =
 let either onSuccessF onFailureF = 
   either (onSuccess onSuccessF) (onFailure onFailureF)
 
+[<RequireQualifiedAccess>]
 module AR =
   let mapFailure f aResult =
     aResult
     |> Async.ofAsyncResult 
     |> Async.map (mapFailure f) |> AR
 
-  let catch a =
-    a |> Async.Catch
+  let catch aComputation =
+    aComputation 
+    |> Async.Catch
     |> Async.map ofChoice
     |> AR 
