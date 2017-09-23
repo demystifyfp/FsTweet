@@ -45,6 +45,7 @@
     <Compile Include="Db.fs" />
     <Compile Include="Email.fs" />
     <Compile Include="UserSignup.fs" />
+    <Compile Include="Auth.fs" />
     <Compile Include="FsTweet.Web.fs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />

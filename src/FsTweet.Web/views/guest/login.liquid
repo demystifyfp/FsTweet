@@ -1,0 +1,31 @@
+{% extends "master_page.liquid" %}
+
+{% block head %}
+  <title> Login </title>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="row">
+    <div class="col-md-offset-3 col-md-5 well">
+      {% if model.Error %}
+        <p class="alert alert-danger">
+          {{ model.Error.Value }}
+        </p>
+      {% endif %}
+      <form method="POST" action="/login">    
+        <input type="hidden" name="Error" value="{{model.Error}}" />
+        <div class="form-group">
+          <label for="Username">Username</label>
+          <input type="text" id="Username" name="Username" class="form-control" value="{{model.Username}}" required>
+        </div>
+        <div class="form-group">
+          <label for="Password">Password</label>
+          <input type="password" id="Password" name="Password" class="form-control" value="{{model.Password}}" required>
+        </div>
+        <button class="btn btn-primary btn-lg btn-block" type="submit">Login</button>
+      </form>
+    </div>    
+  </div>  
+</div>
+{% endblock %}
