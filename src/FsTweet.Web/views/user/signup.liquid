@@ -9,7 +9,7 @@
   <form class="form-signup" method="POST" action="/signup">
     <h2 class="form-signup-heading">Join FsTweet Today!</h2>
     {% if model.Error %}
-      <p class="bg-danger">
+      <p class="alert alert-danger">
         {{ model.Error.Value }}
       </p>
     {% endif %}

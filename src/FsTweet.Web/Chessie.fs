@@ -15,6 +15,11 @@ let onFailure f xs =
 let either onSuccessF onFailureF = 
   either (onSuccess onSuccessF) (onFailure onFailureF)
 
+let (|Success|Failure|) result = 
+  match result with
+  | Ok (x,_) -> Success x
+  | Bad errs -> Failure (List.head errs)
+
 [<RequireQualifiedAccess>]
 module AR =
   let mapFailure f aResult =

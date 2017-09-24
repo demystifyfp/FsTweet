@@ -49,4 +49,4 @@ type PasswordHash = private PasswordHash of string with
 
   static member Create (password : Password) =
     BCrypt.HashPassword(password.Value)
-    |> PasswordHash
+    |> PasswordHash 
