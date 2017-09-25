@@ -18,6 +18,13 @@ module Domain =
           }
         }
 
+  type LoginError =
+  | UsernameNotFound
+  | EmailNotVerified
+  | PasswordMisMatch
+  | Error of System.Exception
+
+  type Login = FindUser -> LoginRequest -> AsyncResult<User, LoginError>
 
 module Suave =
   open Suave
@@ -50,8 +57,7 @@ module Suave =
       | Success req -> 
         return! Successful.OK "TODO" ctx
       | Failure err -> 
-        let viewModel =
-          {vm with Error = Some err}
+        let viewModel = {vm with Error = Some err}
         return! page "guest/login.liquid" viewModel ctx
     | Choice2Of2 err ->
       let viewModel = 

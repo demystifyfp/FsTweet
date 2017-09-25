@@ -50,3 +50,21 @@ type PasswordHash = private PasswordHash of string with
   static member Create (password : Password) =
     BCrypt.HashPassword(password.Value)
     |> PasswordHash 
+
+type UserEmail = 
+| Verified of EmailAddress
+| NotVerified of EmailAddress
+
+type User = {
+  UserId : UserId
+  Username : Username
+  Email : UserEmail
+  PasswordHash : PasswordHash
+}
+
+type FindUser = Username -> AsyncResult<User option, System.Exception>
+
+
+module Persistence =
+  open Database
+  let findUser (getDataCtx : GetDataContext) (username : Username) = ()

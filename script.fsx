@@ -1,8 +1,7 @@
 #r "./packages/email/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
-open Newtonsoft.Json
+#r "./packages/BCrypt.Net-Next/lib/net452/BCrypt.Net-Next.dll"
 
-let placeHolders = 
-  Map.empty
-    .Add("verification_code", "12323")
+open BCrypt.Net
 
-JsonConvert.SerializeObject(placeHolders)
+
+BCrypt.InterrogateHash "$2a$10$e8IgrOqZx08UTwIZSbswAec7ospkD.E/JeySAWj19iDcksRDWE9y6"

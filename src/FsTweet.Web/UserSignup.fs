@@ -118,7 +118,8 @@ module Persistence =
       UsernameAlreadyExists
     | _ -> Error ex
 
-  let createUser (getDataCtx : GetDataContext) createUserReq = asyncTrial {
+  let createUser (getDataCtx : GetDataContext) 
+    (createUserReq : CreateUserRequest) = asyncTrial {
     let ctx = getDataCtx ()
     let users = ctx.Public.Users
     
@@ -252,13 +253,13 @@ module Suave =
       let result =
         UserSignupRequest.TryCreate (vm.Username, vm.Password, vm.Email)
       match result with
-      | Ok (userSignupReq, _) ->
+      | Success userSignupReq ->
         let userSignupAsyncResult = signupUser userSignupReq
         let! webpart =
           handleUserSignupAsyncResult vm userSignupAsyncResult
         return! webpart ctx
-      | Bad msgs ->
-        let viewModel = {vm with Error = Some (List.head msgs)}
+      | Failure msg ->
+        let viewModel = {vm with Error = Some msg}
         return! page signupTemplatePath viewModel ctx
     | Choice2Of2 err ->
       let viewModel = {emptyUserSignupViewModel with Error = Some err}
