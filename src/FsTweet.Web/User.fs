@@ -51,6 +51,16 @@ type PasswordHash = private PasswordHash of string with
     BCrypt.HashPassword(password.Value)
     |> PasswordHash 
 
+  static member TryCreate passwordHash =
+    try 
+      BCrypt.InterrogateHash passwordHash |> ignore
+      PasswordHash passwordHash |> ok
+    with
+    | _ -> fail "Invalid Password Hash"
+
+  static member VerifyPassword (password : Password) (passwordHash : PasswordHash) =
+    BCrypt.Verify(password.Value, passwordHash.Value)
+
 type UserEmail = 
 | Verified of EmailAddress
 | NotVerified of EmailAddress
@@ -67,4 +77,39 @@ type FindUser = Username -> AsyncResult<User option, System.Exception>
 
 module Persistence =
   open Database
-  let findUser (getDataCtx : GetDataContext) (username : Username) = ()
+  open FSharp.Data.Sql
+  open Chessie
+  let mapUser (user : DataContext.``public.UsersEntity``) = 
+    let userResult = trial {
+      let! username = Username.TryCreate user.Username
+      let! passwordHash = PasswordHash.TryCreate user.PasswordHash
+      let! email = EmailAddress.TryCreate user.Email
+      let userEmail =
+        match user.IsEmailVerified with
+        | true -> Verified email
+        | _ -> NotVerified email
+      return {
+        UserId = UserId user.Id
+        Username = username
+        PasswordHash = passwordHash
+        Email = userEmail
+      } 
+    }
+    userResult
+    |> mapFailure (System.Exception)
+    |> Async.singleton
+    |> AR
+  let findUser (getDataCtx : GetDataContext) (username : Username) = asyncTrial {
+    let ctx = getDataCtx()
+    let! userToFind = 
+      query {
+        for u in ctx.Public.Users do
+          where (u.Username = username.Value)
+      } |> Seq.tryHeadAsync |> AR.catch
+    match userToFind with
+    | Some user -> 
+      let! user = mapUser user
+      return Some user
+    | None -> return None
+  }
+    
