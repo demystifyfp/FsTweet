@@ -68,6 +68,11 @@ module Suave =
     Error = None
   }
 
+  let loginTemplatePath = "user/login.liquid"
+
+  let renderLoginPage (viewModel : LoginViewModel) = 
+    page loginTemplatePath viewModel
+
   let onLoginSuccess (user : User) = 
     Successful.OK user.Username.Value
 
@@ -76,20 +81,20 @@ module Suave =
     | PasswordMisMatch ->
        let vm = 
         {viewModel with Error = Some "password didn't match"}
-       page "guest/login.liquid" vm
+       renderLoginPage vm
     | EmailNotVerified -> 
        let vm = 
         {viewModel with Error = Some "email not verified"}
-       page "guest/login.liquid" vm
+       renderLoginPage vm
     | UsernameNotFound -> 
        let vm = 
         {viewModel with Error = Some "invalid username"}
-       page "guest/login.liquid" vm
+       renderLoginPage vm
     | Error ex -> 
       printfn "%A" ex
       let vm = 
         {viewModel with Error = Some "something went wrong"}
-      page "guest/login.liquid" vm
+      renderLoginPage vm
     
   let handleLoginResult viewModel loginResult = 
     either onLoginSuccess (onLoginFailure viewModel) loginResult
@@ -113,15 +118,13 @@ module Suave =
         return! webpart ctx
       | Failure err -> 
         let viewModel = {vm with Error = Some err}
-        return! page "guest/login.liquid" viewModel ctx
+        return! renderLoginPage viewModel ctx
     | Choice2Of2 err ->
       let viewModel = 
         {emptyLoginViewModel with Error = Some err}
-      return! page "guest/login.liquid" viewModel ctx
+      return! renderLoginPage viewModel ctx
   }
 
-  let renderLoginPage viewModel = 
-    page "guest/login.liquid" viewModel
   let webpart getDataCtx =
     let findUser = Persistence.findUser getDataCtx
     path "/login" >=> choose [
