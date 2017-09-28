@@ -61,14 +61,18 @@ type PasswordHash = private PasswordHash of string with
   static member VerifyPassword (password : Password) (passwordHash : PasswordHash) =
     BCrypt.Verify(password.Value, passwordHash.Value)
 
-type UserEmail = 
+type UserEmailAddress = 
 | Verified of EmailAddress
 | NotVerified of EmailAddress
+with member this.Value =
+      match this with
+      | Verified e | NotVerified e -> 
+        e.Value
 
 type User = {
   UserId : UserId
   Username : Username
-  Email : UserEmail
+  EmailAddress : UserEmailAddress
   PasswordHash : PasswordHash
 }
 
@@ -84,7 +88,7 @@ module Persistence =
       let! username = Username.TryCreate user.Username
       let! passwordHash = PasswordHash.TryCreate user.PasswordHash
       let! email = EmailAddress.TryCreate user.Email
-      let userEmail =
+      let userEmailAddress =
         match user.IsEmailVerified with
         | true -> Verified email
         | _ -> NotVerified email
@@ -92,11 +96,11 @@ module Persistence =
         UserId = UserId user.Id
         Username = username
         PasswordHash = passwordHash
-        Email = userEmail
+        EmailAddress = userEmailAddress
       } 
     }
     userResult
-    |> mapFailure (System.Exception)
+    |> mapFailure System.Exception
     |> Async.singleton
     |> AR
   let findUser (getDataCtx : GetDataContext) (username : Username) = asyncTrial {

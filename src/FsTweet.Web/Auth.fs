@@ -34,7 +34,7 @@ module Domain =
     | None -> 
       return! AR.fail UsernameNotFound
     | Some user -> 
-      match user.Email with
+      match user.EmailAddress with
       | NotVerified _ -> 
         return! AR.fail EmailNotVerified
       | Verified _ ->
