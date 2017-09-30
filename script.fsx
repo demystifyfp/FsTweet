@@ -1,7 +1,8 @@
-#r "./packages/email/Newtonsoft.Json/lib/net45/Newtonsoft.Json.dll"
-#r "./packages/BCrypt.Net-Next/lib/net452/BCrypt.Net-Next.dll"
+#r "./packages/Suave/lib/net40/Suave.dll"
 
-open BCrypt.Net
+open Suave.Utils
+open System
 
-
-BCrypt.InterrogateHash "$2a$10$e8IgrOqZx08UTwIZSbswAec7ospkD.E/JeySAWj19iDcksRDWE9y6"
+Crypto.generateKey Crypto.KeyLength
+|> Convert.ToBase64String
+|> printfn "%s"

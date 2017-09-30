@@ -58,5 +58,11 @@ let main argv =
       Wall.Suave.webpart ()
     ]
     
-  startWebServer defaultConfig app
+  let serverKey = 
+    Environment.GetEnvironmentVariable "FSTWEET_SERVER_KEY"
+    |> ServerKey.fromBase64
+  let serverConfig = 
+    {defaultConfig with serverKey = serverKey}
+
+  startWebServer serverConfig app
   0

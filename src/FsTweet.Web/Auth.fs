@@ -88,12 +88,6 @@ module Suave =
                   | Some state ->
                       state.set userSessionKey user
                   | _ -> never)
-      
-  let isAuthenticated ctx =
-    match HttpContext.sessionId ctx with
-    | Some _ -> true
-    | None -> false
-
   let getLoggedInUser ctx : User option =
     match HttpContext.state ctx with
     | Some state -> 
@@ -101,10 +95,12 @@ module Suave =
     | _ -> None
 
   let userSession fFailure fSuccess = 
-    context (fun ctx ->
-              match isAuthenticated ctx, getLoggedInUser ctx with
-              | true, (Some user) -> fSuccess user
-              | _ -> fFailure)
+    statefulForSession 
+    >=> context (fun ctx ->
+                  match getLoggedInUser ctx with
+                  | Some user -> fSuccess user
+                  | _ -> fFailure)
+    
 
   let redirectToLoginPage (req : HttpRequest) = 
     let redirectUrl = 
@@ -114,8 +110,7 @@ module Suave =
     request redirectToLoginPage
     
   let user fSuccess =
-    statefulForSession
-    >=> userSession onAnonymousAccess fSuccess
+    userSession onAnonymousAccess fSuccess
   
   let onLoginSuccess viewModel (user : User) = 
     let redirectUrl = 
