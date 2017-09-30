@@ -14,6 +14,7 @@
         </p>
       {% endif %}
       <form method="POST" action="/login">
+        <input type="hidden" name="ReturnUrl" value="{{model.ReturnUrl}}" />
         <div class="form-group">
           <label for="Username">Username</label>
           <input type="text" id="Username" name="Username" class="form-control" value="{{model.Username}}" required>

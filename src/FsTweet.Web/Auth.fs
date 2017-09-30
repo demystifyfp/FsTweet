@@ -62,12 +62,14 @@ module Suave =
   type LoginViewModel = {
     Username : string
     Password : string
+    ReturnUrl: string
     Error : string option
   }
 
   let emptyLoginViewModel = {
     Username = ""
     Password = ""
+    ReturnUrl = ""
     Error = None
   }
 
@@ -115,10 +117,14 @@ module Suave =
     statefulForSession
     >=> userSession onAnonymousAccess fSuccess
   
-  let onLoginSuccess (user : User) = 
+  let onLoginSuccess viewModel (user : User) = 
+    let redirectUrl = 
+      match viewModel.ReturnUrl with
+      | "" -> "/wall"
+      | x -> x
     authenticated CookieLife.Session false 
       >=> createUserSession user
-      >=> Redirection.FOUND "/wall"
+      >=> Redirection.FOUND redirectUrl
 
   let onLoginFailure viewModel loginError =
     match loginError with
@@ -141,7 +147,9 @@ module Suave =
       renderLoginPage vm
     
   let handleLoginResult viewModel loginResult = 
-    either onLoginSuccess (onLoginFailure viewModel) loginResult
+    either 
+      (onLoginSuccess viewModel)
+      (onLoginFailure viewModel) loginResult
 
   let handleLoginAsyncResult viewModel aLoginResult = 
     aLoginResult
@@ -169,9 +177,17 @@ module Suave =
       return! renderLoginPage viewModel ctx
   }
 
+  let renderLoginPageWithRedirect (request : HttpRequest) =
+    let viewModel =
+      match request.["returnUrl"] with
+      | None -> emptyLoginViewModel
+      | Some returnUrl -> 
+        {emptyLoginViewModel with ReturnUrl = returnUrl}
+    renderLoginPage viewModel
+
   let webpart getDataCtx =
     let findUser = Persistence.findUser getDataCtx
     path "/login" >=> choose [
-      GET >=> renderLoginPage emptyLoginViewModel
+      GET >=> request renderLoginPageWithRedirect
       POST >=> handleUserLogin findUser
     ]
