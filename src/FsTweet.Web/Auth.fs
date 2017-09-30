@@ -55,6 +55,9 @@ module Suave =
   open Chessie.ErrorHandling
   open Chessie
   open User
+  open Suave.Authentication
+  open Suave.Cookie
+  open Suave.State.CookieStateStore
 
   type LoginViewModel = {
     Username : string
@@ -73,8 +76,49 @@ module Suave =
   let renderLoginPage (viewModel : LoginViewModel) = 
     page loginTemplatePath viewModel
 
+  let userSessionKey = "fsTweetUser"
+
+  let createUserSession (user : User) =
+    authenticated CookieLife.Session false 
+    >=> statefulForSession 
+    >=> context (fun ctx ->
+                  match HttpContext.state ctx with
+                  | Some state ->
+                      state.set userSessionKey user
+                  | _ -> never)
+      
+  let isAuthenticated ctx =
+    match HttpContext.sessionId ctx with
+    | Some _ -> true
+    | None -> false
+
+  let getLoggedInUser ctx : User option =
+    match HttpContext.state ctx with
+    | Some state -> 
+      state.get userSessionKey
+    | _ -> None
+
+  let userSession fFailure fSuccess = 
+    context (fun ctx ->
+              match isAuthenticated ctx, getLoggedInUser ctx with
+              | true, (Some user) -> fSuccess user
+              | _ -> fFailure)
+
+  let redirectToLoginPage (req : HttpRequest) = 
+    let redirectUrl = 
+      sprintf "/login?returnUrl=%s" req.path
+    Redirection.FOUND redirectUrl
+  let onAnonymousAccess =
+    request redirectToLoginPage
+    
+  let user fSuccess =
+    statefulForSession
+    >=> userSession onAnonymousAccess fSuccess
+  
   let onLoginSuccess (user : User) = 
-    Successful.OK user.Username.Value
+    authenticated CookieLife.Session false 
+      >=> createUserSession user
+      >=> Redirection.FOUND "/wall"
 
   let onLoginFailure viewModel loginError =
     match loginError with
@@ -105,7 +149,7 @@ module Suave =
     |> Async.map (handleLoginResult viewModel)
 
 
-  let handleUserLogin findUser ctx = async {
+  let handleUserLogin findUser (ctx : HttpContext) = async {
     match bindEmptyForm ctx.request with
     | Choice1Of2 (vm : LoginViewModel) ->
       let result = 
