@@ -62,14 +62,14 @@ module Suave =
   type LoginViewModel = {
     Username : string
     Password : string
-    ReturnUrl: string
+    ReturnPath: string
     Error : string option
   }
 
   let emptyLoginViewModel = {
     Username = ""
     Password = ""
-    ReturnUrl = ""
+    ReturnPath = ""
     Error = None
   }
 
@@ -81,8 +81,7 @@ module Suave =
   let userSessionKey = "fsTweetUser"
 
   let createUserSession (user : User) =
-    authenticated CookieLife.Session false 
-    >=> statefulForSession 
+    statefulForSession 
     >=> context (fun ctx ->
                   match HttpContext.state ctx with
                   | Some state ->
@@ -104,7 +103,7 @@ module Suave =
 
   let redirectToLoginPage (req : HttpRequest) = 
     let redirectUrl = 
-      sprintf "/login?returnUrl=%s" req.path
+      sprintf "/login?returnPath=%s" req.path
     Redirection.FOUND redirectUrl
   let onAnonymousAccess =
     request redirectToLoginPage
@@ -114,7 +113,7 @@ module Suave =
   
   let onLoginSuccess viewModel (user : User) = 
     let redirectUrl = 
-      match viewModel.ReturnUrl with
+      match viewModel.ReturnPath with
       | "" -> "/wall"
       | x -> x
     authenticated CookieLife.Session false 
@@ -174,10 +173,10 @@ module Suave =
 
   let renderLoginPageWithRedirect (request : HttpRequest) =
     let viewModel =
-      match request.["returnUrl"] with
+      match request.["returnPath"] with
       | None -> emptyLoginViewModel
-      | Some returnUrl -> 
-        {emptyLoginViewModel with ReturnUrl = returnUrl}
+      | Some returnPath -> 
+        {emptyLoginViewModel with ReturnPath = returnPath}
     renderLoginPage viewModel
 
   let webpart getDataCtx =
