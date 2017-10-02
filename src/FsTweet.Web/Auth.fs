@@ -80,40 +80,42 @@ module Suave =
 
   let userSessionKey = "fsTweetUser"
 
+  let setState key value ctx =
+    match HttpContext.state ctx with
+    | Some state ->
+       state.set key value
+    | _ -> never
   let createUserSession (user : User) =
     statefulForSession 
-    >=> context (fun ctx ->
-                  match HttpContext.state ctx with
-                  | Some state ->
-                      state.set userSessionKey user
-                  | _ -> never)
+    >=> context (setState userSessionKey user)
+
   let getLoggedInUser ctx : User option =
     match HttpContext.state ctx with
     | Some state -> 
       state.get userSessionKey
     | _ -> None
-
+  let retrieveUserSession fFailure fSuccess ctx =
+    match getLoggedInUser ctx with
+    | Some user -> fSuccess user
+    | _ -> fFailure
   let userSession fFailure fSuccess = 
     statefulForSession 
-    >=> context (fun ctx ->
-                  match getLoggedInUser ctx with
-                  | Some user -> fSuccess user
-                  | _ -> fFailure)
-    
+    >=> context (retrieveUserSession fFailure fSuccess)
 
   let redirectToLoginPage (req : HttpRequest) = 
     let redirectUrl = 
       sprintf "/login?returnPath=%s" req.path
     Redirection.FOUND redirectUrl
-  let onAnonymousAccess = request redirectToLoginPage
 
-  let user fSuccess = 
-    request (fun req -> 
-      authenticate CookieLife.Session false
-        (fun () -> Choice2Of2(redirectToLoginPage req))
-        (sprintf "%A" >> RequestErrors.BAD_REQUEST >> Choice2Of2)
-        (userSession onAnonymousAccess fSuccess))
-    
+  let authenticateUser fSuccess req =
+    let loginPageRedirect = redirectToLoginPage req
+    authenticate CookieLife.Session false
+      (fun () -> Choice2Of2 loginPageRedirect)
+      (fun _ -> Choice2Of2 loginPageRedirect)
+      (userSession loginPageRedirect fSuccess)
+
+  let requiresAuth fSuccess = 
+    request (authenticateUser fSuccess)
   
   let onLoginSuccess viewModel (user : User) = 
     let redirectUrl = 

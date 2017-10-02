@@ -10,4 +10,4 @@ module Suave =
     Successful.OK user.Username.Value
   
   let webpart () =
-    path "/wall" >=> user renderWall
+    path "/wall" >=> requiresAuth renderWall
