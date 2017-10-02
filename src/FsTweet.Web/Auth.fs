@@ -105,11 +105,15 @@ module Suave =
     let redirectUrl = 
       sprintf "/login?returnPath=%s" req.path
     Redirection.FOUND redirectUrl
-  let onAnonymousAccess =
-    request redirectToLoginPage
+  let onAnonymousAccess = request redirectToLoginPage
+
+  let user fSuccess = 
+    request (fun req -> 
+      authenticate CookieLife.Session false
+        (fun () -> Choice2Of2(redirectToLoginPage req))
+        (sprintf "%A" >> RequestErrors.BAD_REQUEST >> Choice2Of2)
+        (userSession onAnonymousAccess fSuccess))
     
-  let user fSuccess =
-    userSession onAnonymousAccess fSuccess
   
   let onLoginSuccess viewModel (user : User) = 
     let redirectUrl = 
