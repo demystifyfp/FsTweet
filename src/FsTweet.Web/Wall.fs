@@ -6,8 +6,10 @@ module Suave =
   open Suave.Operators
   open User
   open Auth.Suave
-  let renderWall (user : User) = 
-    Successful.OK user.Username.Value
+
+  let renderWall (user : User) ctx = async {
+    return! Successful.OK user.Username.Value ctx
+  }
   
   let webpart () =
     path "/wall" >=> requiresAuth renderWall

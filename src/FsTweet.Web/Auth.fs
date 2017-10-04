@@ -85,6 +85,7 @@ module Suave =
     | Some state ->
        state.set key value
     | _ -> never
+    
   let createUserSession (user : User) =
     statefulForSession 
     >=> context (setState userSessionKey user)
