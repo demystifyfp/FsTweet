@@ -73,8 +73,14 @@ module Suave =
 
   let loginTemplatePath = "user/login.liquid"
 
-  let renderLoginPage (viewModel : LoginViewModel) = 
-    page loginTemplatePath viewModel
+  let redirectToWallPage = 
+    Redirection.FOUND "/wall"
+
+  let renderLoginPage (viewModel : LoginViewModel) hasUserLoggedIn = 
+    match hasUserLoggedIn with
+    | Some _ -> redirectToWallPage
+    | _ -> page loginTemplatePath viewModel
+      
 
   let userSessionKey = "fsTweetUser"
 
@@ -101,6 +107,10 @@ module Suave =
     statefulForSession 
     >=> context (initUserSession fFailure fSuccess)
 
+  let optionalUserSession fSuccess =
+    statefulForSession
+    >=> context (fun ctx -> fSuccess (retrieveUser ctx))
+
   let redirectToLoginPage = 
     Redirection.FOUND "/login"
 
@@ -109,31 +119,37 @@ module Suave =
       (fun _ -> Choice2Of2 redirectToLoginPage)
       (fun _ -> Choice2Of2 redirectToLoginPage)
       (userSession redirectToLoginPage fSuccess)
+
+  let mayRequiresAuth fSuccess =
+    authenticate CookieLife.Session false
+      (fun _ -> Choice2Of2 (fSuccess None))
+      (fun _ -> Choice2Of2 (fSuccess None))
+      (optionalUserSession fSuccess)
   
   let onLoginSuccess viewModel (user : User) = 
     authenticated CookieLife.Session false 
       >=> createUserSession user
-      >=> Redirection.FOUND "/wall"
+      >=> redirectToWallPage
 
   let onLoginFailure viewModel loginError =
     match loginError with
     | PasswordMisMatch ->
        let vm = 
         {viewModel with Error = Some "password didn't match"}
-       renderLoginPage vm
+       renderLoginPage vm None
     | EmailNotVerified -> 
        let vm = 
         {viewModel with Error = Some "email not verified"}
-       renderLoginPage vm
+       renderLoginPage vm None
     | UsernameNotFound -> 
        let vm = 
         {viewModel with Error = Some "invalid username"}
-       renderLoginPage vm
+       renderLoginPage vm None
     | Error ex -> 
       printfn "%A" ex
       let vm = 
         {viewModel with Error = Some "something went wrong"}
-      renderLoginPage vm
+      renderLoginPage vm None
     
   let handleLoginResult viewModel loginResult = 
     either 
@@ -159,16 +175,16 @@ module Suave =
         return! webpart ctx
       | Failure err -> 
         let viewModel = {vm with Error = Some err}
-        return! renderLoginPage viewModel ctx
+        return! renderLoginPage viewModel None ctx
     | Choice2Of2 err ->
       let viewModel = 
         {emptyLoginViewModel with Error = Some err}
-      return! renderLoginPage viewModel ctx
+      return! renderLoginPage viewModel None ctx
   } 
 
   let webpart getDataCtx =
     let findUser = Persistence.findUser getDataCtx
     path "/login" >=> choose [
-      GET >=> renderLoginPage emptyLoginViewModel
+      GET >=> mayRequiresAuth (renderLoginPage emptyLoginViewModel)
       POST >=> handleUserLogin findUser
     ]
