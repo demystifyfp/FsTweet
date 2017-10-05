@@ -90,18 +90,18 @@ module Suave =
     statefulForSession 
     >=> context (setState userSessionKey user)
 
-  let getLoggedInUser ctx : User option =
+  let retrieveUser ctx : User option =
     match HttpContext.state ctx with
     | Some state -> 
       state.get userSessionKey
     | _ -> None
-  let retrieveUserSession fFailure fSuccess ctx =
-    match getLoggedInUser ctx with
+  let initUserSession fFailure fSuccess ctx =
+    match retrieveUser ctx with
     | Some user -> fSuccess user
     | _ -> fFailure
   let userSession fFailure fSuccess = 
     statefulForSession 
-    >=> context (retrieveUserSession fFailure fSuccess)
+    >=> context (initUserSession fFailure fSuccess)
 
   let redirectToLoginPage (req : HttpRequest) = 
     let redirectUrl = 
@@ -111,7 +111,7 @@ module Suave =
   let authenticateUser fSuccess req =
     let loginPageRedirect = redirectToLoginPage req
     authenticate CookieLife.Session false
-      (fun () -> Choice2Of2 loginPageRedirect)
+      (fun _ -> Choice2Of2 loginPageRedirect)
       (fun _ -> Choice2Of2 loginPageRedirect)
       (userSession loginPageRedirect fSuccess)
 
