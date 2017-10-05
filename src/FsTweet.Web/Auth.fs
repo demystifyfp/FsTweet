@@ -62,14 +62,12 @@ module Suave =
   type LoginViewModel = {
     Username : string
     Password : string
-    ReturnPath: string
     Error : string option
   }
 
   let emptyLoginViewModel = {
     Username = ""
     Password = ""
-    ReturnPath = ""
     Error = None
   }
 
@@ -103,29 +101,19 @@ module Suave =
     statefulForSession 
     >=> context (initUserSession fFailure fSuccess)
 
-  let redirectToLoginPage (req : HttpRequest) = 
-    let redirectUrl = 
-      sprintf "/login?returnPath=%s" req.path
-    Redirection.FOUND redirectUrl
+  let redirectToLoginPage = 
+    Redirection.FOUND "/login"
 
-  let authenticateUser fSuccess req =
-    let loginPageRedirect = redirectToLoginPage req
+  let requiresAuth fSuccess =
     authenticate CookieLife.Session false
-      (fun _ -> Choice2Of2 loginPageRedirect)
-      (fun _ -> Choice2Of2 loginPageRedirect)
-      (userSession loginPageRedirect fSuccess)
-
-  let requiresAuth fSuccess = 
-    request (authenticateUser fSuccess)
+      (fun _ -> Choice2Of2 redirectToLoginPage)
+      (fun _ -> Choice2Of2 redirectToLoginPage)
+      (userSession redirectToLoginPage fSuccess)
   
   let onLoginSuccess viewModel (user : User) = 
-    let redirectUrl = 
-      match viewModel.ReturnPath with
-      | "" -> "/wall"
-      | x -> x
     authenticated CookieLife.Session false 
       >=> createUserSession user
-      >=> Redirection.FOUND redirectUrl
+      >=> Redirection.FOUND "/wall"
 
   let onLoginFailure viewModel loginError =
     match loginError with
@@ -176,19 +164,11 @@ module Suave =
       let viewModel = 
         {emptyLoginViewModel with Error = Some err}
       return! renderLoginPage viewModel ctx
-  }
-
-  let renderLoginPageWithRedirect (request : HttpRequest) =
-    let viewModel =
-      match request.["returnPath"] with
-      | None -> emptyLoginViewModel
-      | Some returnPath -> 
-        {emptyLoginViewModel with ReturnPath = returnPath}
-    renderLoginPage viewModel
+  } 
 
   let webpart getDataCtx =
     let findUser = Persistence.findUser getDataCtx
     path "/login" >=> choose [
-      GET >=> request renderLoginPageWithRedirect
+      GET >=> renderLoginPage emptyLoginViewModel
       POST >=> handleUserLogin findUser
     ]
