@@ -1,0 +1,29 @@
+{% extends "master_page.liquid" %}
+
+{% block head %}
+  <title> {{model.Username}}  </title>
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <div class="row">
+      <div class="col-md-4">
+        <p class="username">Hi {{model.Username}}</p>
+        <a href="/{{model.Username}}" class="btn btn-primary">My Profile</a>
+        <a href="/logout" class="btn btn-primary">Logout</a>
+      </div>
+      <div class="col-md-8">
+        <div class="row">  
+          <div class="tweet_container">
+            <form class="form-tweet">
+              <textarea class="form-control" rows="3" style="resize:none" id="tweet" name="tweet"></textarea>     
+              <button class="btn btn-primary tweet_button pull-right"> Tweet </button>
+            </form>
+          </div>
+        </div>
+        <div id="wall">
+
+        </div>
+      </div>
+  </div>
+{% endblock %}

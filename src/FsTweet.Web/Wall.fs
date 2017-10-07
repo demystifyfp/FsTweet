@@ -6,9 +6,15 @@ module Suave =
   open Suave.Operators
   open User
   open Auth.Suave
+  open Suave.DotLiquid
+
+  type WallViewModel = {
+    Username :  string
+  }
 
   let renderWall (user : User) ctx = async {
-    return! Successful.OK user.Username.Value ctx
+    let vm = {Username = user.Username.Value }
+    return! page "user/wall.liquid" vm ctx
   }
   
   let webpart () =

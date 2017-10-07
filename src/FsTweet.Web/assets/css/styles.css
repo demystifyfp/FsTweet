@@ -71,3 +71,19 @@ body {
 p.well {
   margin-top: 50px
 }
+
+.tweet_button {
+  margin-top: 3px;
+}
+
+.tweet_container {
+  background-color: rgb(240, 247, 254);
+  margin-bottom: 10px;
+  padding: 5px;
+}
+
+.username {
+  margin-top: 2px;
+  font-size: x-large;
+  color: grey;
+}
