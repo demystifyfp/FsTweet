@@ -18,3 +18,18 @@ type CreateUserTable()=
     
   override this.Down() = 
     base.Delete.Table("Users") |> ignore
+
+[<Migration(201710071212L, "Creating Tweet Table")>]
+type CreateTweetTable()=
+  inherit Migration()
+
+  override this.Up() =
+    base.Create.Table("Tweets")
+      .WithColumn("Id").AsGuid().PrimaryKey()
+      .WithColumn("Post").AsString(144).NotNullable()
+      .WithColumn("UserId").AsInt32().ForeignKey("Users", "Id")
+      .WithColumn("TweetedAt").AsDateTimeOffset().NotNullable()
+    |> ignore
+  
+  override this.Down() = 
+    base.Delete.Table("Tweets") |> ignore
