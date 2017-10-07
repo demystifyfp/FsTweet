@@ -120,6 +120,12 @@ module Suave =
       (fun _ -> Choice2Of2 redirectToLoginPage)
       (userSession redirectToLoginPage fSuccess)
 
+  let requiresAuth2 fSuccess =
+    authenticate CookieLife.Session false
+      (fun _ -> Choice2Of2 JSON.forbidden)
+      (fun _ -> Choice2Of2 JSON.forbidden)
+      (userSession JSON.forbidden fSuccess)
+
   let mayRequiresAuth fSuccess =
     authenticate CookieLife.Session false
       (fun _ -> Choice2Of2 (fSuccess None))

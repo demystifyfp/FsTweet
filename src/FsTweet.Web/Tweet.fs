@@ -31,7 +31,7 @@ module Persistence =
     newTweet.UserId <- userId
     newTweet.Id <- newPostId
     newTweet.Post <- post.Value
-    newTweet.TweetedAt <- DateTimeOffset.Now.DateTime
+    newTweet.TweetedAt <- DateTime.UtcNow
 
     do! submitUpdates ctx 
     return PostId newPostId

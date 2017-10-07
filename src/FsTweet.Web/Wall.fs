@@ -9,6 +9,7 @@ module Suave =
   open Suave.DotLiquid
   open Tweet
   open Chiron
+  open Chessie.ErrorHandling
   open Chessie
 
   type WallViewModel = {
@@ -26,17 +27,43 @@ module Suave =
     return! page "user/wall.liquid" vm ctx
   }
 
-  let handleNewTweet ctx = async {
+  let onCreateTweetSuccess (PostId id) = 
+    ["id", String (id.ToString())]
+    |> Map.ofList
+    |> Object
+    |> JSON.ok
+
+  let onCreateTweetFailure (ex : System.Exception) =
+    printfn "%A" ex
+    JSON.internalError
+
+  let handleCreateTweetResult result = 
+    either onCreateTweetSuccess onCreateTweetFailure result 
+
+  let handleAsyncCreateTweetResult aResult =
+    aResult
+    |> Async.ofAsyncResult
+    |> Async.map handleCreateTweetResult
+
+  let handleNewTweet createTweet (user : User) ctx = async {
     match JSON.deserialize ctx.request  with
     | Success (PostRequest post) -> 
-      return! Successful.OK "TODO" ctx
+      match Post.TryCreate post with
+      | Success post -> 
+        let aCreateTweetResult = createTweet user.UserId post
+        let! webpart = 
+          handleAsyncCreateTweetResult aCreateTweetResult
+        return! webpart ctx
+      | Failure err -> 
+        return! JSON.badRequest err ctx
     | Failure err -> 
       return! JSON.badRequest err ctx
   }
   
-  let webpart () = 
+  let webpart getDataCtx =
+    let createTweet = Persistence.createPost getDataCtx 
     choose [
       path "/wall" >=> requiresAuth renderWall
       POST >=> path "/tweets"  
-        >=> handleNewTweet  
+        >=> requiresAuth2 (handleNewTweet createTweet)  
     ]

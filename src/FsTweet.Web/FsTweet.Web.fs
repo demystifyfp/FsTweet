@@ -55,7 +55,7 @@ let main argv =
       path "/" >=> page "guest/home.liquid" ""
       UserSignup.Suave.webPart getDataCtx sendEmail
       Auth.Suave.webpart getDataCtx
-      Wall.Suave.webpart ()
+      Wall.Suave.webpart getDataCtx
     ]
     
   let serverKey = 

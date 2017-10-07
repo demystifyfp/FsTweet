@@ -22,10 +22,27 @@ let inline deserialize< ^a when (^a or FromJsonDefaults)
 
 
 let contentType = "application/json; charset=utf-8"
-let badRequest msg = 
+
+let jsonWebPart webpart json = 
+  json
+  |> Json.format
+  |> webpart
+  >=> Writers.addHeader "Content-type" contentType
+
+let error webpart msg  = 
   ["msg", String msg]
   |> Map.ofList
   |> Object
-  |> Json.format
-  |> RequestErrors.BAD_REQUEST
-  >=> Writers.addHeader "Content-type" contentType
+  |> jsonWebPart webpart
+
+let badRequest msg = 
+  error RequestErrors.BAD_REQUEST msg
+let forbidden = 
+  error RequestErrors.FORBIDDEN "login required"
+
+let internalError =
+  error ServerErrors.INTERNAL_ERROR "something went wrong"
+
+let inline ok< ^a when (^a or ToJsonDefaults) 
+              : (static member ToJson: ^a -> Json<unit>)> (data : ^a) =
+  data |> Json.serialize |> jsonWebPart Successful.OK
