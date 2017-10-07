@@ -17,13 +17,17 @@ module Suave =
     Username :  string
   }
 
-  
-
   let parse req =
     req.rawForm
     |> Encoding.UTF8.GetString 
     |> Json.tryParse
     |> ofChoice
+
+  let inline deserialize< ^a when (^a or FromJsonDefaults) 
+                            : (static member FromJson: ^a -> ^a Json)> req : Result< ^a, string> =
+    parse req 
+    |> mapSuccess Json.deserialize
+    
   let jsonContentType = "application/json; charset=utf-8"
   let badRequest msg = 
     ["msg", String msg]
@@ -45,13 +49,9 @@ module Suave =
   }
 
   let handleNewTweet ctx = async {
-    match parse ctx.request  with
-    | Success json -> 
-       match Json.tryDeserialize json with
-       | Choice1Of2 (PostRequest post) -> 
-          return! Successful.OK "TODO" ctx
-       | Choice2Of2 err -> 
-          return! badRequest err ctx
+    match deserialize ctx.request  with
+    | Success (PostRequest post) -> 
+      return! Successful.OK "TODO" ctx
     | Failure err -> 
       return! badRequest err ctx
   }
