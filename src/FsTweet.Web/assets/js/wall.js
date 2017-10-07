@@ -6,14 +6,13 @@ $(function(){
       url : "/tweets",
       type: "post",
       data: JSON.stringify({post : $("#tweet").val()}),
-      dataType: "json",
-      contentType: "application/json",
-      success: function(){
-        alert("successfully posted")
-      }
-    }).fail(function(data){
-      console.log(data)
-    })
+      contentType: "application/json"
+    }).done(function(){
+      alert("successfully posted")
+    }).fail(function(jqXHR, textStatus, errorThrown) {
+      console.log({jqXHR : jqXHR, textStatus : textStatus, errorThrown: errorThrown})
+      alert("something went wrong!")
+    });
 
   });
 

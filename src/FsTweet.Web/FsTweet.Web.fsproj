@@ -43,6 +43,7 @@
     <Compile Include="Chessie.fs" />
     <Compile Include="Db.fs" />
     <Compile Include="Email.fs" />
+    <Compile Include="Json.fs" />
     <Compile Include="User.fs" />
     <Compile Include="UserSignup.fs" />
     <Compile Include="Auth.fs" />
