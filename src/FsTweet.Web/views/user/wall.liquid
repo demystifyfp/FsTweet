@@ -15,9 +15,9 @@
       <div class="col-md-8">
         <div class="row">  
           <div class="tweet_container">
-            <form class="form-tweet">
-              <textarea class="form-control" rows="3" style="resize:none" id="tweet" name="tweet"></textarea>     
-              <button class="btn btn-primary tweet_button pull-right"> Tweet </button>
+            <form class="form-tweet" id="tweetForm">
+              <textarea maxlength="140" class="form-control" rows="3" style="resize:none" id="tweet" name="tweet"></textarea>     
+              <button class="btn btn-primary tweet_button pull-right" type="submit"> Tweet </button>
             </form>
           </div>
         </div>
@@ -26,4 +26,9 @@
         </div>
       </div>
   </div>
+{% endblock %}
+
+
+{% block scripts %}
+<script src="/assets/js/wall.js"></script>
 {% endblock %}
