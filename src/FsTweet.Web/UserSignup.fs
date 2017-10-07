@@ -237,16 +237,6 @@ module Suave =
     sprintf "/signup/success/%s" viewModel.Username
     |> Redirection.FOUND 
 
-  let handleUserSignupResult viewModel result =
-    either 
-      (onUserSignupSuccess viewModel)
-      (onUserSignupFailure viewModel) result
-
-  let handleUserSignupAsyncResult viewModel aResult = 
-    aResult
-    |> Async.ofAsyncResult
-    |> Async.map (handleUserSignupResult viewModel)
-
   let handleUserSignup signupUser ctx = async {
     match bindEmptyForm ctx.request with
     | Choice1Of2 (vm : UserSignupViewModel) ->
@@ -254,9 +244,9 @@ module Suave =
         UserSignupRequest.TryCreate (vm.Username, vm.Password, vm.Email)
       match result with
       | Success userSignupReq ->
-        let userSignupAsyncResult = signupUser userSignupReq
         let! webpart =
-          handleUserSignupAsyncResult vm userSignupAsyncResult
+          signupUser userSignupReq
+          |> AR.either (onUserSignupSuccess vm) (onUserSignupFailure vm)
         return! webpart ctx
       | Failure msg ->
         let viewModel = {vm with Error = Some msg}
@@ -277,14 +267,10 @@ module Suave =
     printfn "%A" ex
     page "server_error.liquid" "error while verifying email"
 
-  let handleVerifyUserAsyncResult aResult =
-    aResult
-    |> Async.ofAsyncResult
-    |> Async.map (either onVerificationSuccess onVerificationFailure)
-
   let handleSignupVerify (verifyUser : VerifyUser) verificationCode ctx = async {
-    let verifyUserAsyncResult = verifyUser verificationCode
-    let! webpart = handleVerifyUserAsyncResult verifyUserAsyncResult
+    let! webpart = 
+      verifyUser verificationCode 
+      |> AR.either onVerificationSuccess onVerificationFailure
     return! webpart ctx
   }
   

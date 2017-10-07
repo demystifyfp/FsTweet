@@ -114,17 +114,17 @@ module Suave =
   let redirectToLoginPage = 
     Redirection.FOUND "/login"
 
-  let requiresAuth fSuccess =
+  let onAuthenticate fSuccess fFailure =
     authenticate CookieLife.Session false
-      (fun _ -> Choice2Of2 redirectToLoginPage)
-      (fun _ -> Choice2Of2 redirectToLoginPage)
-      (userSession redirectToLoginPage fSuccess)
+      (fun _ -> Choice2Of2 fFailure)
+      (fun _ -> Choice2Of2 fFailure)
+      (userSession fFailure fSuccess)
+
+  let requiresAuth fSuccess =
+    onAuthenticate fSuccess redirectToLoginPage
 
   let requiresAuth2 fSuccess =
-    authenticate CookieLife.Session false
-      (fun _ -> Choice2Of2 JSON.forbidden)
-      (fun _ -> Choice2Of2 JSON.forbidden)
-      (userSession JSON.forbidden fSuccess)
+    onAuthenticate fSuccess JSON.forbidden
 
   let mayRequiresAuth fSuccess =
     authenticate CookieLife.Session false
@@ -156,17 +156,6 @@ module Suave =
       let vm = 
         {viewModel with Error = Some "something went wrong"}
       renderLoginPage vm None
-    
-  let handleLoginResult viewModel loginResult = 
-    either 
-      (onLoginSuccess viewModel)
-      (onLoginFailure viewModel) loginResult
-
-  let handleLoginAsyncResult viewModel aLoginResult = 
-    aLoginResult
-    |> Async.ofAsyncResult
-    |> Async.map (handleLoginResult viewModel)
-
 
   let handleUserLogin findUser (ctx : HttpContext) = async {
     match bindEmptyForm ctx.request with
@@ -175,9 +164,9 @@ module Suave =
         LoginRequest.TryCreate (vm.Username, vm.Password)
       match result with
       | Success req -> 
-        let aLoginResult = login findUser req 
         let! webpart = 
-          handleLoginAsyncResult vm aLoginResult
+          login findUser req
+          |> AR.either (onLoginSuccess vm) (onLoginFailure vm)
         return! webpart ctx
       | Failure err -> 
         let viewModel = {vm with Error = Some err}
