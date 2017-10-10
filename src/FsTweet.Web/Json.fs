@@ -37,8 +37,8 @@ let error webpart msg  =
 
 let badRequest msg = 
   error RequestErrors.BAD_REQUEST msg
-let forbidden = 
-  error RequestErrors.FORBIDDEN "login required"
+let unauthorized = 
+  error RequestErrors.UNAUTHORIZED "login required"
 
 let internalError =
   error ServerErrors.INTERNAL_ERROR "something went wrong"

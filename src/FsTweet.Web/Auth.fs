@@ -124,7 +124,7 @@ module Suave =
     onAuthenticate fSuccess redirectToLoginPage
 
   let requiresAuth2 fSuccess =
-    onAuthenticate fSuccess JSON.forbidden
+    onAuthenticate fSuccess JSON.unauthorized
 
   let mayRequiresAuth fSuccess =
     authenticate CookieLife.Session false
