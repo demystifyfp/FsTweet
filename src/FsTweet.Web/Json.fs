@@ -7,7 +7,6 @@ open Suave.Operators
 open System.Text
 open Chiron
 open Chessie.ErrorHandling
-open Chessie
 
 let parse req =
   req.rawForm
@@ -16,9 +15,13 @@ let parse req =
   |> ofChoice
 
 let inline deserialize< ^a when (^a or FromJsonDefaults) 
-                          : (static member FromJson: ^a -> ^a Json)> req : Result< ^a, string> =
+                          : (static member FromJson: ^a -> ^a Json)> 
+                          req : Result< ^a, string> =
   parse req 
-  |> mapSuccess Json.deserialize
+  |> bind (fun json -> 
+            json 
+            |> Json.tryDeserialize 
+            |> ofChoice)
 
 
 let contentType = "application/json; charset=utf-8"

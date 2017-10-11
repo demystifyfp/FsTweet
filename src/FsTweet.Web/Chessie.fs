@@ -7,11 +7,6 @@ let mapFailure f result =
     List.head xs |> f |> List.singleton 
   mapFailure mapFirstItem result
 
-let mapSuccess f result = 
-  match result with
-  | Ok (x,_) -> ok (f x)
-  | Bad errs -> Bad errs
-
 let onSuccess f (x, _) = f x
 
 let onFailure f xs = 
