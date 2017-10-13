@@ -26,17 +26,17 @@ let inline deserialize< ^a when (^a or FromJsonDefaults)
 
 let contentType = "application/json; charset=utf-8"
 
-let jsonWebPart webpart json = 
+let jsonWebPart fWebpart json = 
   json
   |> Json.format
-  |> webpart
+  |> fWebpart
   >=> Writers.addHeader "Content-type" contentType
 
-let error webpart msg  = 
+let error fWebpart msg  = 
   ["msg", String msg]
   |> Map.ofList
   |> Object
-  |> jsonWebPart webpart
+  |> jsonWebPart fWebpart
 
 let badRequest msg = 
   error RequestErrors.BAD_REQUEST msg
