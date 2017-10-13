@@ -26,7 +26,7 @@ let inline deserialize< ^a when (^a or FromJsonDefaults)
 
 let contentType = "application/json; charset=utf-8"
 
-let jsonWebPart fWebpart json = 
+let json fWebpart json = 
   json
   |> Json.format
   |> fWebpart
@@ -36,7 +36,7 @@ let error fWebpart msg  =
   ["msg", String msg]
   |> Map.ofList
   |> Object
-  |> jsonWebPart fWebpart
+  |> json fWebpart
 
 let badRequest msg = 
   error RequestErrors.BAD_REQUEST msg
@@ -46,6 +46,5 @@ let unauthorized =
 let internalError =
   error ServerErrors.INTERNAL_ERROR "something went wrong"
 
-let inline ok< ^a when (^a or ToJsonDefaults) 
-              : (static member ToJson: ^a -> Json<unit>)> (data : ^a) =
-  data |> Json.serialize |> jsonWebPart Successful.OK
+let ok =
+  json (Successful.OK)
