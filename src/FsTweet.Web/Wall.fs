@@ -37,22 +37,14 @@ module Suave =
     printfn "%A" ex
     JSON.internalError
 
-  let handleCreateTweetResult result = 
-    either onCreateTweetSuccess onCreateTweetFailure result 
-
-  let handleAsyncCreateTweetResult aResult =
-    aResult
-    |> Async.ofAsyncResult
-    |> Async.map handleCreateTweetResult
-
   let handleNewTweet createTweet (user : User) ctx = async {
     match JSON.deserialize ctx.request  with
     | Success (PostRequest post) -> 
       match Post.TryCreate post with
       | Success post -> 
-        let aCreateTweetResult = createTweet user.UserId post
         let! webpart = 
-          handleAsyncCreateTweetResult aCreateTweetResult
+          createTweet user.UserId post
+          |> AR.either onCreateTweetSuccess onCreateTweetFailure
         return! webpart ctx
       | Failure err -> 
         return! JSON.badRequest err ctx
