@@ -31,12 +31,17 @@
 
 <script type="text/javascript">
   window.fsTweet = {
-    userId : "{{model.UserId}}",
+    user : {
+      id : "{{model.UserId}}",
+      name : "{{model.Username}}",
+      feedToken : "{{model.UserFeedToken}}",
+      timelineToken : "{{model.TimelineFeedToken}}"
+    },
     stream : {
       appId : "{{model.AppId}}",
       apiKey : "{{model.ApiKey}}"
     }
-  }
+  }  
 </script>
 
 <script src="/assets/js/wall.js"></script>

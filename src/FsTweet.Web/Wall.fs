@@ -15,6 +15,8 @@ module Suave =
   type WallViewModel = {
     Username :  string
     UserId : int
+    UserFeedToken : string
+    TimelineFeedToken : string
     ApiKey : string
     AppId : string
   }
@@ -28,11 +30,20 @@ module Suave =
   let renderWall 
     (getStreamClient : GetStream.Client) 
     (user : User) ctx = async {
-     
+
     let (UserId userId) = user.UserId
+    
+    let userFeed = 
+      GetStream.userFeed getStreamClient userId
+      
+    let timelineFeed = 
+      GetStream.timelineFeed getStreamClient userId
+    
     let vm = {
       Username = user.Username.Value 
       UserId = userId
+      UserFeedToken = userFeed.ReadOnlyToken
+      TimelineFeedToken = timelineFeed.ReadOnlyToken
       ApiKey = getStreamClient.Config.ApiKey
       AppId = getStreamClient.Config.AppId}
 

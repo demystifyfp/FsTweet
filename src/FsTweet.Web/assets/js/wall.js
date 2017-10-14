@@ -22,4 +22,16 @@ $(function(){
     }  
   });
 
+  let client = stream.connect(fsTweet.stream.apiKey, null, fsTweet.stream.appId);
+  let userFeed = client.feed("user", fsTweet.user.id, fsTweet.user.feedToken);
+  let timelineFeed = client.feed("timeline", fsTweet.user.id, fsTweet.user.timelineToken);
+  debugger;
+  userFeed.subscribe(function(data){
+    console.log("userFeed")
+    console.log(data);
+  });
+  timelineFeed.subscribe(function(data){
+    console.log("timelineFeed")
+    console.log(data);
+  });
 });

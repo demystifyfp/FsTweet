@@ -19,3 +19,9 @@ let newClient config = {
     new StreamClient(config.ApiKey, config.ApiSecret)
   Config = config
 }
+
+let userFeed getStreamClient userId =
+  getStreamClient.StreamClient.Feed("user", userId.ToString()) 
+
+let timelineFeed getStreamClient userId =
+  getStreamClient.StreamClient.Feed("timeline", userId.ToString())
