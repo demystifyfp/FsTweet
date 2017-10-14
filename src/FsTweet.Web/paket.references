@@ -6,6 +6,7 @@ Suave.Experimental
 Chessie
 BCrypt.Net-Next
 Chiron
+stream-net
 group Database
 SQLProvider
 Npgsql
