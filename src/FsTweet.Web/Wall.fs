@@ -16,14 +16,15 @@ module Domain =
   type PublishTweet =
     CreatePost -> NotifyTweet -> AsyncResult<PostId, PublishTweetError>
 
-  let publishTweet createPost notifyTweet userId post = asyncTrial {
+  let publishTweet createPost notifyTweet (user : User) post = asyncTrial {
     let! postId = 
-      createPost userId post
+      createPost user.UserId post
       |> AR.mapFailure CreatePostError
 
     let tweet = {
       PostId = postId
-      UserId = userId
+      UserId = user.UserId
+      Username = user.Username
       Post = post
     }
     do! notifyTweet tweet 
@@ -46,6 +47,7 @@ module GetStream =
     let (PostId postId) = tweet.PostId
     let activity = new Activity(userIdAsString, "tweet", postId.ToString())
     activity.SetData("tweet", tweet.Post.Value)
+    activity.SetData("username", tweet.Username.Value)
     
     userFeed.AddActivity(activity)
     |> Async.AwaitTask
@@ -121,7 +123,7 @@ module Suave =
       match Post.TryCreate post with
       | Success post -> 
         let! webpart = 
-          publishTweet user.UserId post
+          publishTweet user post
           |> AR.either onPublishTweetSuccess onPublishTweetFailure
         return! webpart ctx
       | Failure err -> 

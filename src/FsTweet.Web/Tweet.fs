@@ -18,6 +18,7 @@ type CreatePost = UserId -> Post -> AsyncResult<PostId, System.Exception>
 
 type Tweet = {
   UserId : UserId
+  Username : Username
   PostId : PostId
   Post : Post
 }
