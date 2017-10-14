@@ -25,7 +25,9 @@ $(function(){
 
   let client = stream.connect(fsTweet.stream.apiKey, null, fsTweet.stream.appId);
   let userFeed = client.feed("user", fsTweet.user.id, fsTweet.user.feedToken);
+
   userFeed.subscribe(function(data){
-    console.log(data);
+    renderTweet($("#wall"),data.new[0]);
   });
+
 });
