@@ -14,6 +14,9 @@ module Suave =
 
   type WallViewModel = {
     Username :  string
+    UserId : int
+    ApiKey : string
+    AppId : string
   }
 
   type PostRequest = PostRequest of string with
@@ -22,9 +25,19 @@ module Suave =
       return PostRequest post 
     }
 
-  let renderWall (user : User) ctx = async {
-    let vm = {Username = user.Username.Value }
+  let renderWall 
+    (getStreamClient : GetStream.Client) 
+    (user : User) ctx = async {
+     
+    let (UserId userId) = user.UserId
+    let vm = {
+      Username = user.Username.Value 
+      UserId = userId
+      ApiKey = getStreamClient.Config.ApiKey
+      AppId = getStreamClient.Config.AppId}
+
     return! page "user/wall.liquid" vm ctx
+
   }
 
   let onCreateTweetSuccess (PostId id) = 
@@ -52,10 +65,10 @@ module Suave =
       return! JSON.badRequest err ctx
   }
   
-  let webpart getDataCtx =
+  let webpart getDataCtx getStreamClient =
     let createTweet = Persistence.createPost getDataCtx 
     choose [
-      path "/wall" >=> requiresAuth renderWall
+      path "/wall" >=> requiresAuth (renderWall getStreamClient)
       POST >=> path "/tweets"  
         >=> requiresAuth2 (handleNewTweet createTweet)  
     ]

@@ -27,5 +27,17 @@
 
 
 {% block scripts %}
+<script src="/assets/js/lib/getstream.js"> </script>
+
+<script type="text/javascript">
+  window.fsTweet = {
+    userId : "{{model.UserId}}",
+    stream : {
+      appId : "{{model.AppId}}",
+      apiKey : "{{model.ApiKey}}"
+    }
+  }
+</script>
+
 <script src="/assets/js/wall.js"></script>
 {% endblock %}

@@ -43,19 +43,31 @@ let main argv =
   let env = 
     Environment.GetEnvironmentVariable "FSTWEET_ENVIRONMENT"
 
+  let streamConfig : GetStream.Config = {
+      ApiKey = 
+        Environment.GetEnvironmentVariable "FSTWEET_STREAM_KEY"
+      ApiSecret = 
+        Environment.GetEnvironmentVariable "FSTWEET_STREAM_SECRET"
+      AppId = 
+        Environment.GetEnvironmentVariable "FSTWEET_STREAM_APP_ID"
+  }
+
   let sendEmail = 
     match env with
     | "dev" -> consoleSendEmail
     | _ -> initSendEmail senderEmailAddress serverToken
 
   let getDataCtx = dataContext fsTweetConnString
+
+  let getStreamClient = GetStream.newClient streamConfig
+
   let app = 
     choose [
       serveAssets
       path "/" >=> page "guest/home.liquid" ""
       UserSignup.Suave.webPart getDataCtx sendEmail
       Auth.Suave.webpart getDataCtx
-      Wall.Suave.webpart getDataCtx
+      Wall.Suave.webpart getDataCtx getStreamClient
     ]
     
   let serverKey = 
