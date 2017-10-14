@@ -1,14 +1,15 @@
 $(function(){
   $("#tweetForm").submit(function(event){
     event.preventDefault();
-
+    $tweet = $("#tweet")
     $.ajax({
       url : "/tweets",
       type: "post",
-      data: JSON.stringify({post : $("#tweet").val()}),
+      data: JSON.stringify({post : $tweet.val()}),
       contentType: "application/json"
     }).done(function(){
-      alert("successfully posted")
+      alert("successfully posted");
+      $tweet.val('');
     }).fail(function(jqXHR, textStatus, errorThrown) {
       console.log({jqXHR : jqXHR, textStatus : textStatus, errorThrown: errorThrown})
       alert("something went wrong!")
@@ -24,14 +25,7 @@ $(function(){
 
   let client = stream.connect(fsTweet.stream.apiKey, null, fsTweet.stream.appId);
   let userFeed = client.feed("user", fsTweet.user.id, fsTweet.user.feedToken);
-  let timelineFeed = client.feed("timeline", fsTweet.user.id, fsTweet.user.timelineToken);
-  debugger;
   userFeed.subscribe(function(data){
-    console.log("userFeed")
-    console.log(data);
-  });
-  timelineFeed.subscribe(function(data){
-    console.log("timelineFeed")
     console.log(data);
   });
 });

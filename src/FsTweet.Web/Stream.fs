@@ -1,6 +1,6 @@
 [<RequireQualifiedAccess>]
 module GetStream
-
+open Chessie.ErrorHandling
 open Stream
 
 type Config = {
@@ -21,7 +21,8 @@ let newClient config = {
 }
 
 let userFeed getStreamClient userId =
-  getStreamClient.StreamClient.Feed("user", userId.ToString()) 
-
-let timelineFeed getStreamClient userId =
-  getStreamClient.StreamClient.Feed("timeline", userId.ToString())
+  getStreamClient.StreamClient.Feed("user", userId)
+let mapNewActivityResponse response =
+  match response with
+  | Choice1Of2 _ -> ok ()
+  | Choice2Of2 ex -> fail ex
