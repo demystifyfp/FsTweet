@@ -10,16 +10,17 @@ module Domain =
   type NotifyTweet = Tweet -> AsyncResult<unit, Exception>
 
   type PublishTweetError =
-  | CreatePostError of Exception
+  | CreateTweetError of Exception
   | NotifyTweetError of (TweetId * Exception)
 
   type PublishTweet =
-    CreateTweet -> NotifyTweet -> AsyncResult<TweetId, PublishTweetError>
+    CreateTweet -> NotifyTweet -> 
+      User -> Post -> AsyncResult<TweetId, PublishTweetError>
 
-  let publishTweet createPost notifyTweet (user : User) post = asyncTrial {
+  let publishTweet createTweet notifyTweet (user : User) post = asyncTrial {
     let! tweetId = 
-      createPost user.UserId post
-      |> AR.mapFailure CreatePostError
+      createTweet user.UserId post
+      |> AR.mapFailure CreateTweetError
 
     let tweet = {
       Id = tweetId
@@ -113,7 +114,7 @@ module Suave =
     | NotifyTweetError (tweetId, ex) ->
       printfn "%A" ex
       onPublishTweetSuccess tweetId
-    | CreatePostError ex ->
+    | CreateTweetError ex ->
       printfn "%A" ex
       JSON.internalError
 
