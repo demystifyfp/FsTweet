@@ -11,26 +11,26 @@ module Domain =
 
   type PublishTweetError =
   | CreatePostError of Exception
-  | NotifyTweetError of (PostId * Exception)
+  | NotifyTweetError of (TweetId * Exception)
 
   type PublishTweet =
-    CreatePost -> NotifyTweet -> AsyncResult<PostId, PublishTweetError>
+    CreatePost -> NotifyTweet -> AsyncResult<TweetId, PublishTweetError>
 
   let publishTweet createPost notifyTweet (user : User) post = asyncTrial {
-    let! postId = 
+    let! tweetId = 
       createPost user.UserId post
       |> AR.mapFailure CreatePostError
 
     let tweet = {
-      PostId = postId
+      Id = tweetId
       UserId = user.UserId
       Username = user.Username
       Post = post
     }
     do! notifyTweet tweet 
-        |> AR.mapFailure (fun ex -> NotifyTweetError(postId, ex))
+        |> AR.mapFailure (fun ex -> NotifyTweetError(tweetId, ex))
 
-    return postId
+    return tweetId
   }
 
 module GetStream = 
@@ -44,8 +44,8 @@ module GetStream =
     let userIdAsString = userId.ToString()
     let userFeed =
       GetStream.userFeed getStreamClient userIdAsString
-    let (PostId postId) = tweet.PostId
-    let activity = new Activity(userIdAsString, "tweet", postId.ToString())
+    let (TweetId tweetId) = tweet.Id
+    let activity = new Activity(userIdAsString, "tweet", tweetId.ToString())
     activity.SetData("tweet", tweet.Post.Value)
     activity.SetData("username", tweet.Username.Value)
     
@@ -102,7 +102,7 @@ module Suave =
 
   }
 
-  let onPublishTweetSuccess (PostId id) = 
+  let onPublishTweetSuccess (TweetId id) = 
     ["id", String (id.ToString())]
     |> Map.ofList
     |> Object
@@ -110,9 +110,9 @@ module Suave =
 
   let onPublishTweetFailure (err : PublishTweetError) =
     match err with
-    | NotifyTweetError (postId, ex) ->
+    | NotifyTweetError (tweetId, ex) ->
       printfn "%A" ex
-      onPublishTweetSuccess postId
+      onPublishTweetSuccess tweetId
     | CreatePostError ex ->
       printfn "%A" ex
       JSON.internalError
@@ -133,9 +133,9 @@ module Suave =
   }
   
   let webpart getDataCtx getStreamClient =
-    let createPost = Persistence.createPost getDataCtx 
+    let createTweet = Persistence.createTweet getDataCtx 
     let notifyTweet = GetStream.notifyTweet getStreamClient
-    let publishTweet = publishTweet createPost notifyTweet
+    let publishTweet = publishTweet createTweet notifyTweet
     choose [
       path "/wall" >=> requiresAuth (renderWall getStreamClient)
       POST >=> path "/tweets"  

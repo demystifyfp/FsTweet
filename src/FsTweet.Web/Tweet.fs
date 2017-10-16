@@ -2,7 +2,7 @@ namespace Tweet
 open User
 open Chessie.ErrorHandling
 
-type PostId = PostId of System.Guid
+type TweetId = TweetId of System.Guid
 
 type Post = private Post of string with
   static member TryCreate (post : string) =
@@ -14,12 +14,12 @@ type Post = private Post of string with
     let (Post post) = this
     post
 
-type CreatePost = UserId -> Post -> AsyncResult<PostId, System.Exception>
+type CreatePost = UserId -> Post -> AsyncResult<TweetId, System.Exception>
 
 type Tweet = {
   UserId : UserId
   Username : Username
-  PostId : PostId
+  Id : TweetId
   Post : Post
 }
 
@@ -29,16 +29,16 @@ module Persistence =
   open Database
   open System
 
-  let createPost (getDataCtx : GetDataContext) (UserId userId) (post : Post) = asyncTrial {
+  let createTweet (getDataCtx : GetDataContext) (UserId userId) (post : Post) = asyncTrial {
     let ctx = getDataCtx()
     let newTweet = ctx.Public.Tweets.Create()
-    let newPostId = Guid.NewGuid()
+    let newTweetId = Guid.NewGuid()
 
     newTweet.UserId <- userId
-    newTweet.Id <- newPostId
+    newTweet.Id <- newTweetId
     newTweet.Post <- post.Value
     newTweet.TweetedAt <- DateTime.UtcNow
 
     do! submitUpdates ctx 
-    return PostId newPostId
+    return TweetId newTweetId
   }
