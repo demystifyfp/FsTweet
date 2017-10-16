@@ -14,7 +14,7 @@ type Post = private Post of string with
     let (Post post) = this
     post
 
-type CreatePost = UserId -> Post -> AsyncResult<TweetId, System.Exception>
+type CreateTweet = UserId -> Post -> AsyncResult<TweetId, System.Exception>
 
 type Tweet = {
   UserId : UserId
