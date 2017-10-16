@@ -27,7 +27,7 @@ module Suave =
     return! page "user/wall.liquid" vm ctx
   }
 
-  let onCreateTweetSuccess (PostId id) = 
+  let onCreateTweetSuccess (TweetId id) = 
     ["id", String (id.ToString())]
     |> Map.ofList
     |> Object
@@ -53,7 +53,7 @@ module Suave =
   }
   
   let webpart getDataCtx =
-    let createTweet = Persistence.createPost getDataCtx 
+    let createTweet = Persistence.createTweet getDataCtx 
     choose [
       path "/wall" >=> requiresAuth renderWall
       POST >=> path "/tweets"  
