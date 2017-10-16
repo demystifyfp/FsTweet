@@ -14,7 +14,7 @@ module Domain =
   | NotifyTweetError of (TweetId * Exception)
 
   type PublishTweet =
-    CreatePost -> NotifyTweet -> AsyncResult<TweetId, PublishTweetError>
+    CreateTweet -> NotifyTweet -> AsyncResult<TweetId, PublishTweetError>
 
   let publishTweet createPost notifyTweet (user : User) post = asyncTrial {
     let! tweetId = 
