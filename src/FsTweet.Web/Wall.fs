@@ -40,20 +40,25 @@ module GetStream =
   open Stream
   open Chessie.ErrorHandling
 
+  let mapStreamResponse response =
+    match response with
+    | Choice1Of2 _ -> ok ()
+    | Choice2Of2 ex -> fail ex
   let notifyTweet (getStreamClient: GetStream.Client) (tweet : Tweet) = 
+    
     let (UserId userId) = tweet.UserId
-    let userIdAsString = userId.ToString()
-    let userFeed =
-      GetStream.userFeed getStreamClient userIdAsString
     let (TweetId tweetId) = tweet.Id
-    let activity = new Activity(userIdAsString, "tweet", tweetId.ToString())
+    let userFeed =
+      GetStream.userFeed getStreamClient userId
+    
+    let activity = new Activity(userId.ToString(), "tweet", tweetId.ToString())
     activity.SetData("tweet", tweet.Post.Value)
     activity.SetData("username", tweet.Username.Value)
     
     userFeed.AddActivity(activity)
     |> Async.AwaitTask
     |> Async.Catch
-    |> Async.map GetStream.mapNewActivityResponse
+    |> Async.map mapStreamResponse
     |> AR
 
 module Suave =
