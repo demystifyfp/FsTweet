@@ -95,7 +95,7 @@ module Suave =
     let (UserId userId) = user.UserId
     
     let userFeed = 
-      GetStream.userFeed getStreamClient (userId.ToString())
+      GetStream.userFeed getStreamClient userId
     
     let vm = {
       Username = user.Username.Value 
