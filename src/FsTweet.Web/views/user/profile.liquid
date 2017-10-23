@@ -10,6 +10,12 @@
     <div class="col-md-4">
       <img src="{{model.GravatarUrl}}" alt="" class="gravatar" />
       <p class="gravatar_name">@{{model.Username}}</p>
+      {% if model.IsLoggedIn %}
+        {% unless model.IsSelf %}
+          <a class="btn btn-primary" href="#" id="follow" data-username="{{model.username}}">Follow</a>
+        {% endunless %}
+        <a class="btn btn-primary" href="/logout">Logout</a>
+      {% endif %}
     </div>
   </div>
 </div>

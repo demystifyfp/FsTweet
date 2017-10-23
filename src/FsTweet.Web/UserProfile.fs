@@ -13,6 +13,15 @@ module Suave =
   type UserProfileViewModel = {
     Username : string
     GravatarUrl : string
+    IsLoggedIn : bool
+    IsSelf : bool
+  }
+
+  let emptyUserProfileViewModel = {
+    Username = ""
+    GravatarUrl = ""
+    IsLoggedIn = false
+    IsSelf = false
   }
 
   let gravatarUrl (emailAddress : UserEmailAddress) =
@@ -24,17 +33,18 @@ module Suave =
     |> String.concat ""
     |> sprintf "http://www.gravatar.com/avatar/%s?s=200"
 
-  let onFindUserSuccess username (userMayBe : User option) = 
+  let onFindUserSuccess userProfileViewModel (userMayBe : User option) = 
     match userMayBe with
     | None -> 
       let msg = 
-        sprintf "User '%s' not found" username
+        sprintf "User '%s' not found" userProfileViewModel.Username
       page "not_found.liquid" msg
     | Some user -> 
-      let vm = {
-        GravatarUrl = gravatarUrl user.EmailAddress
-        Username = user.Username.Value
-      }
+      let vm = 
+        { userProfileViewModel with 
+            GravatarUrl = gravatarUrl user.EmailAddress
+            Username = user.Username.Value
+        }
       page "user/profile.liquid" vm
 
   let onFindUserFailure ex =
@@ -45,14 +55,26 @@ module Suave =
   let renderUserProfile findUser username userMayBe  ctx = async {
     match Username.TryCreate username with
     | Success validatedUsername -> 
+      let vm = 
+        {emptyUserProfileViewModel 
+          with Username = validatedUsername.Value}
       match userMayBe with
       | None -> 
         let! webpart =
-          findUser validatedUsername
-          |> AR.either (onFindUserSuccess username) onFindUserFailure
+            findUser validatedUsername
+            |> AR.either (onFindUserSuccess vm) onFindUserFailure
         return! webpart ctx
-      | Some _  -> 
-        return! Successful.OK "TODO" ctx
+      | Some (user : User) -> 
+        let vm = {vm with IsLoggedIn = true}
+        match user.Username = validatedUsername with
+        | true -> 
+          let vm = {vm with IsSelf = true}
+          return! onFindUserSuccess vm (Some user) ctx
+        | false ->
+          let! webpart =
+            findUser validatedUsername
+            |> AR.either (onFindUserSuccess vm) onFindUserFailure
+          return! webpart ctx
     | Failure _ -> 
       return! page "not_found.liquid" "invalid user name" ctx
   }

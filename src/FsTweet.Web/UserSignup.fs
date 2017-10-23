@@ -110,7 +110,7 @@ module Persistence =
   open Chessie
   open User
   
-  let private mapException (ex : System.Exception) =
+  let private mapException (ex : Exception) =
     match ex with
     | UniqueViolation "IX_Users_Email" _ ->
       EmailAlreadyExists
@@ -185,8 +185,6 @@ module Suave =
   open Suave.DotLiquid
   open Suave.Form
   open Domain
-  open Chessie.ErrorHandling
-  open Database
   open Chessie
   open User
 
