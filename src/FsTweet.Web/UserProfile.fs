@@ -41,7 +41,7 @@ module Suave =
     |> String.concat ""
     |> sprintf "http://www.gravatar.com/avatar/%s?s=200"
 
-  let onFindUserSuccess (getStreamClient : GetStream.Client) userProfileViewModel (userMayBe : User option) = 
+  let onFindUserSuccess getStreamClient userProfileViewModel (userMayBe : User option) = 
     match userMayBe with
     | None -> 
       let msg = 
@@ -51,15 +51,12 @@ module Suave =
       let (UserId userId) = user.UserId
       let userFeed = 
         GetStream.userFeed getStreamClient userId
-      
       let vm = 
         { userProfileViewModel with 
             GravatarUrl = gravatarUrl user.EmailAddress
             Username = user.Username.Value
             UserId = userId
             UserFeedToken = userFeed.ReadOnlyToken
-            ApiKey = getStreamClient.Config.ApiKey
-            AppId = getStreamClient.Config.AppId
         }
       page "user/profile.liquid" vm
 
@@ -68,17 +65,21 @@ module Suave =
     page "server_error.liquid" "something went wrong"
 
 
-  let renderUserProfile getStreamClient findUser username userMayBe ctx = async {
+  let renderUserProfile (getStreamClient : GetStream.Client) findUser username userMayBe ctx = async {
     match Username.TryCreate username with
     | Success validatedUsername -> 
       let vm = 
         {emptyUserProfileViewModel with
-           Username = validatedUsername.Value}
+           Username = validatedUsername.Value
+           ApiKey = getStreamClient.Config.ApiKey
+           AppId = getStreamClient.Config.AppId
+        }
       match userMayBe with
       | None -> 
         let! webpart =
             findUser validatedUsername
-            |> AR.either (onFindUserSuccess getStreamClient vm) onFindUserFailure
+            |> AR.either 
+                   (onFindUserSuccess getStreamClient vm) onFindUserFailure
         return! webpart ctx
       | Some (user : User) -> 
         let vm = {vm with IsLoggedIn = true}
