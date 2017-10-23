@@ -50,6 +50,7 @@
     <Compile Include="Auth.fs" />
     <Compile Include="Tweet.fs" />
     <Compile Include="Wall.fs" />
+    <Compile Include="UserProfile.fs" />
     <Compile Include="FsTweet.Web.fs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />

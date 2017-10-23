@@ -70,7 +70,6 @@ module Suave =
   open Suave.DotLiquid
   open Tweet
   open Chiron
-  open Chessie.ErrorHandling
   open Chessie
   open Domain
 
