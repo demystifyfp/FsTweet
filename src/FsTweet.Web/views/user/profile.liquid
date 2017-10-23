@@ -17,6 +17,58 @@
         <a class="btn btn-primary" href="/logout">Logout</a>
       {% endif %}
     </div>
+     <div class="col-md-8">
+      
+      {% if model.is_self %}
+        <div class="row">
+          {% include 'tweet_post.liquid' %}   
+        </div>     
+      {% endif %} 
+               
+      <div class="row">
+        <ul class="nav nav-tabs nav-justified">
+          <li role="presentation" class="active">
+            <a href="#tweets" data-toggle="tab">Tweets</a>
+          </li>
+          <li role="presentation">
+            <a href="#following" data-toggle="tab">Following <span class="badge" id="followingCount">0</span></a>
+          </li>
+          <li role="presentation">
+            <a href="#followers" data-toggle="tab">Followers <span class="badge" id="followersCount">0</span></a>
+          </li>
+        </ul>        
+        
+        <div class="tab-content">     
+          <div id="tweets" class="tab-pane fade in active">           
+          </div>
+          <div id="following" class="tab-pane fade">            
+          </div>
+          <div id="followers" class="tab-pane fade">            
+          </div>
+        </div>
+      </div>      
+    </div>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/assets/js/lib/getstream.js"> </script>
+
+<script type="text/javascript">
+  window.fsTweet = {
+    user : {
+      id : "{{model.UserId}}",
+      name : "{{model.Username}}",
+      feedToken : "{{model.UserFeedToken}}"
+    },
+    stream : {
+      appId : "{{model.AppId}}",
+      apiKey : "{{model.ApiKey}}"
+    }
+  }  
+</script>
+
+<script src="/assets/js/tweet.js"></script>
+<script src="/assets/js/profile.js"></script>
 {% endblock %}

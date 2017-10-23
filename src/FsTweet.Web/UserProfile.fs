@@ -15,6 +15,10 @@ module Suave =
     GravatarUrl : string
     IsLoggedIn : bool
     IsSelf : bool
+    UserId : int
+    UserFeedToken : string
+    ApiKey : string
+    AppId : string
   }
 
   let emptyUserProfileViewModel = {
@@ -22,6 +26,10 @@ module Suave =
     GravatarUrl = ""
     IsLoggedIn = false
     IsSelf = false
+    UserId = 0
+    UserFeedToken = ""
+    ApiKey = ""
+    AppId = ""
   }
 
   let gravatarUrl (emailAddress : UserEmailAddress) =
@@ -33,17 +41,25 @@ module Suave =
     |> String.concat ""
     |> sprintf "http://www.gravatar.com/avatar/%s?s=200"
 
-  let onFindUserSuccess userProfileViewModel (userMayBe : User option) = 
+  let onFindUserSuccess (getStreamClient : GetStream.Client) userProfileViewModel (userMayBe : User option) = 
     match userMayBe with
     | None -> 
       let msg = 
         sprintf "User '%s' not found" userProfileViewModel.Username
       page "not_found.liquid" msg
     | Some user -> 
+      let (UserId userId) = user.UserId
+      let userFeed = 
+        GetStream.userFeed getStreamClient userId
+      
       let vm = 
         { userProfileViewModel with 
             GravatarUrl = gravatarUrl user.EmailAddress
             Username = user.Username.Value
+            UserId = userId
+            UserFeedToken = userFeed.ReadOnlyToken
+            ApiKey = getStreamClient.Config.ApiKey
+            AppId = getStreamClient.Config.AppId
         }
       page "user/profile.liquid" vm
 
@@ -52,36 +68,37 @@ module Suave =
     page "server_error.liquid" "something went wrong"
 
 
-  let renderUserProfile findUser username userMayBe  ctx = async {
+  let renderUserProfile getStreamClient findUser username userMayBe ctx = async {
     match Username.TryCreate username with
     | Success validatedUsername -> 
       let vm = 
-        {emptyUserProfileViewModel 
-          with Username = validatedUsername.Value}
+        {emptyUserProfileViewModel with
+           Username = validatedUsername.Value}
       match userMayBe with
       | None -> 
         let! webpart =
             findUser validatedUsername
-            |> AR.either (onFindUserSuccess vm) onFindUserFailure
+            |> AR.either (onFindUserSuccess getStreamClient vm) onFindUserFailure
         return! webpart ctx
       | Some (user : User) -> 
         let vm = {vm with IsLoggedIn = true}
         match user.Username = validatedUsername with
         | true -> 
           let vm = {vm with IsSelf = true}
-          return! onFindUserSuccess vm (Some user) ctx
+          return! onFindUserSuccess getStreamClient vm (Some user) ctx
         | false ->
           let! webpart =
             findUser validatedUsername
-            |> AR.either (onFindUserSuccess vm) onFindUserFailure
+            |> AR.either (onFindUserSuccess getStreamClient vm) onFindUserFailure
           return! webpart ctx
     | Failure _ -> 
       return! page "not_found.liquid" "invalid user name" ctx
   }
 
 
-  let webpart (getDataCtx : GetDataContext) = 
+  let webpart (getDataCtx : GetDataContext) getStreamClient = 
     let findUser = Persistence.findUser getDataCtx
     pathScan "/%s" 
-      (fun username -> mayRequiresAuth (renderUserProfile findUser username))
+      (fun username -> 
+        mayRequiresAuth (renderUserProfile getStreamClient findUser username))
     
