@@ -106,3 +106,13 @@ p.well {
 #tweet {
   font-size: large  
 }
+
+.gravatar {
+  border: 1px solid black
+}
+
+.gravatar_name {
+  margin-top: 2px;
+  font-size: 30px;
+  color: grey;
+}

@@ -82,7 +82,7 @@ type FindUser = Username -> AsyncResult<User option, System.Exception>
 module Persistence =
   open Database
   open FSharp.Data.Sql
-  open Chessie
+
   let mapUser (user : DataContext.``public.UsersEntity``) = 
     let userResult = trial {
       let! username = Username.TryCreate user.Username
@@ -103,6 +103,7 @@ module Persistence =
     |> mapFailure System.Exception
     |> Async.singleton
     |> AR
+    
   let findUser (getDataCtx : GetDataContext) (username : Username) = asyncTrial {
     let ctx = getDataCtx()
     let! userToFind = 

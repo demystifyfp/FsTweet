@@ -1,0 +1,16 @@
+{% extends "master_page.liquid" %}
+
+{% block head %}
+  <title> {{model.Username}} - FsTweet </title>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="row">
+    <div class="col-md-4">
+      <img src="{{model.GravatarUrl}}" alt="" class="gravatar" />
+      <p class="gravatar_name">@{{model.Username}}</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
