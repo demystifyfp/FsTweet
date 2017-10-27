@@ -179,7 +179,10 @@ module Suave =
 
   let webpart getDataCtx =
     let findUser = Persistence.findUser getDataCtx
-    path "/login" >=> choose [
-      GET >=> mayRequiresAuth (renderLoginPage emptyLoginViewModel)
-      POST >=> handleUserLogin findUser
+    choose [
+      path "/login" >=> choose [
+        GET >=> mayRequiresAuth (renderLoginPage emptyLoginViewModel)
+        POST >=> handleUserLogin findUser
+      ]
+      path "/logout" >=> deauthenticate >=> redirectToLoginPage
     ]
