@@ -13,7 +13,7 @@ module Domain =
   }
   let gravatarUrl (emailAddress : UserEmailAddress) =
     use md5 = MD5.Create()
-    emailAddress.Value.Trim().ToLowerInvariant()  
+    emailAddress.Value 
     |> System.Text.Encoding.Default.GetBytes
     |> md5.ComputeHash
     |> Array.map (fun b -> b.ToString("x2"))
@@ -26,14 +26,15 @@ module Domain =
     IsSelf = false
   }
 
+  type FindUserProfile = 
+    Username -> AsyncResult<UserProfile option, Exception>
   let findUserProfile (findUser : FindUser) username = asyncTrial {
     let! userMayBe = findUser username
-    match userMayBe with
-    | None -> return None
-    | Some user -> 
-       return Some (newProfile user)
+    return Option.map newProfile userMayBe
   }
 
+  type HandleUserProfile = 
+    Username -> User option -> AsyncResult<UserProfile option, Exception>
   let handleUserProfile findUserProfile (username : Username) loggedInUser  = asyncTrial {
     match loggedInUser with
     | None -> 
@@ -55,8 +56,8 @@ module Suave =
   open Domain
   open User
   open Suave.DotLiquid
-  open Chessie.ErrorHandling
   open Chessie
+  open System
 
   type UserProfileViewModel = {
     Username : string
@@ -76,7 +77,7 @@ module Suave =
       Username = userProfile.User.Username.Value
       GravatarUrl = userProfile.GravatarUrl
       IsLoggedIn = false
-      IsSelf = false
+      IsSelf = userProfile.IsSelf
       UserId = userId
       UserFeedToken = userFeed.ReadOnlyToken
       ApiKey = getStreamClient.Config.ApiKey
@@ -88,30 +89,31 @@ module Suave =
 
   let renderProfileNotFound =
     page "not_found.liquid" "user not found"
-  
-  let handleUserProfileAsyncResult newUserProfileViewModel loggedInUser aResult = async {
-    let! result = aResult |> Async.ofAsyncResult
-    match result with
-    | Success (Some (userProfile : UserProfile)) -> 
+
+  let onHandleUserProfileSuccess newUserProfileViewModel isLoggedIn userProfileMayBe = 
+    match userProfileMayBe with
+    | Some (userProfile : UserProfile) -> 
       let vm = {
         newUserProfileViewModel userProfile with
-          IsLoggedIn = Option.isSome loggedInUser
-          IsSelf = userProfile.IsSelf }
-      return renderUserProfilePage vm
-    | Success None -> 
-      return renderProfileNotFound
-    | Failure ex -> 
-      printfn "%A" ex
-      return page "server_error.liquid" "something went wrong"
-  } 
+          IsLoggedIn = isLoggedIn }
+      renderUserProfilePage vm
+    | None -> 
+      renderProfileNotFound
+
+  let onHandleUserProfileFailure (ex : Exception) =
+    printfn "%A" ex
+    page "server_error.liquid" "something went wrong"
     
 
-  let renderUserProfile newUserProfileViewModel handleUserProfile username loggedInUser  ctx = async {
+  let renderUserProfile newUserProfileViewModel (handleUserProfile : HandleUserProfile) username loggedInUser  ctx = async {
     match Username.TryCreate username with
     | Success validatedUsername -> 
+      let isLoggedIn = Option.isSome loggedInUser
+      let onSuccess = 
+        onHandleUserProfileSuccess newUserProfileViewModel isLoggedIn
       let! webpart = 
         handleUserProfile validatedUsername loggedInUser
-        |> handleUserProfileAsyncResult newUserProfileViewModel loggedInUser
+        |> AR.either onSuccess onHandleUserProfileFailure
       return! webpart ctx
     | Failure _ -> 
       return! renderProfileNotFound ctx
