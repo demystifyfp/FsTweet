@@ -40,7 +40,7 @@ type CreateSocialTable()=
 
   override this.Up() =
     base.Create.Table("Social")
-      .WithColumn("Id").AsGuid().PrimaryKey()
+      .WithColumn("Id").AsGuid().PrimaryKey().Identity()
       .WithColumn("FollowerUserId").AsInt32().ForeignKey("Users", "Id").NotNullable()
       .WithColumn("FollowingUserId").AsInt32().ForeignKey("Users", "Id").NotNullable()
     |> ignore

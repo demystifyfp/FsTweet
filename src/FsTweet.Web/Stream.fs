@@ -20,5 +20,8 @@ let newClient config = {
   Config = config
 }
 
-let userFeed getStreamClient userId =
+let userFeed getStreamClient (userId : int) =
   getStreamClient.StreamClient.Feed("user", userId.ToString())
+
+let timeLineFeed getStreamClient (userId : int) =
+  getStreamClient.StreamClient.Feed("timeline", userId.ToString())

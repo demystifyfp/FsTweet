@@ -28,9 +28,21 @@ $(function(){
 
   let client = stream.connect(fsTweet.stream.apiKey, null, fsTweet.stream.appId);
   let userFeed = client.feed("user", fsTweet.user.id, fsTweet.user.feedToken);
+  let timelineFeed = client.feed("timeline", fsTweet.user.id, fsTweet.user.timelineToken);
 
   userFeed.subscribe(function(data){
     renderTweet($("#wall"),data.new[0]);
   });
+  timelineFeed.subscribe(function(data){
+    renderTweet($("#wall"),data.new[0]);
+  });
+
+  timelineFeed.get({
+    limit: 25
+  }).then(function(body) {
+    $(body.results.reverse()).each(function(index, tweet){
+      renderTweet($("#wall"), tweet);
+    });
+  })
 
 });

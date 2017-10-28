@@ -77,6 +77,7 @@ module Suave =
     Username :  string
     UserId : int
     UserFeedToken : string
+    TimelineToken : string
     ApiKey : string
     AppId : string
   }
@@ -95,11 +96,15 @@ module Suave =
     
     let userFeed = 
       GetStream.userFeed getStreamClient userId
+
+    let timeLineFeed =
+      GetStream.timeLineFeed getStreamClient userId 
     
     let vm = {
       Username = user.Username.Value 
       UserId = userId
       UserFeedToken = userFeed.ReadOnlyToken
+      TimelineToken = timeLineFeed.ReadOnlyToken
       ApiKey = getStreamClient.Config.ApiKey
       AppId = getStreamClient.Config.AppId}
 
