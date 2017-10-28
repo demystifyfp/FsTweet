@@ -7,9 +7,7 @@ module Domain =
 
   type CreateFollowing = User -> UserId -> AsyncResult<unit, Exception>
   type Subscribe = User -> UserId -> AsyncResult<unit, Exception>
-  type FollowUser = 
-    CreateFollowing -> Subscribe -> User -> UserId
-      -> AsyncResult<unit, Exception>
+  type FollowUser = User -> UserId -> AsyncResult<unit, Exception>
 
   let followUser 
     (subscribe : Subscribe) (createFollowing : CreateFollowing) 
@@ -34,7 +32,7 @@ module Persistence =
 
      submitUpdates ctx
    
-module Stream = 
+module GetStream = 
   open User
   open Chessie
   let subscribe (getStreamClient : GetStream.Client) (user : User) (UserId userId) = 
@@ -57,7 +55,6 @@ module Suave =
   open Chiron
   open Chessie
   open Persistence
-  open Stream
   open Domain
 
   type FollowUserRequest = FollowUserRequest of int with 
@@ -72,7 +69,7 @@ module Suave =
     printfn "%A" ex
     JSON.internalError
 
-  let handleFollowUser followUser (user : User) ctx = async {
+  let handleFollowUser (followUser : FollowUser) (user : User) ctx = async {
     match JSON.deserialize ctx.request with
     | Success (FollowUserRequest userId) -> 
       let! webpart =
@@ -85,7 +82,7 @@ module Suave =
 
   let webpart getDataCtx getStreamClient =
     let createFollowing = createFollowing getDataCtx
-    let subscribe = subscribe getStreamClient
+    let subscribe = GetStream.subscribe getStreamClient
     let followUser = followUser subscribe createFollowing
     let handleFollowUser = handleFollowUser followUser
     POST >=> path "/follow" >=> requiresAuth2 handleFollowUser
