@@ -9,20 +9,16 @@ module Suave =
   open Chiron
   open Chessie
 
-  type FollowUserRequest = FollowUserRequest of string with 
+  type FollowUserRequest = FollowUserRequest of int with 
     static member FromJson (_ : FollowUserRequest) = json {
-        let! username = Json.read "username"
-        return FollowUserRequest username 
+        let! userId = Json.read "userId"
+        return FollowUserRequest userId 
       }
 
   let handleFollowUser (user : User) ctx = async {
     match JSON.deserialize ctx.request with
-    | Success (FollowUserRequest username) -> 
-      match Username.TryCreate username with
-      | Success validatedUserName ->
-        return! JSON.ok (String "Todo") ctx
-      | Failure _ -> 
-        return! JSON.badRequest "invalid username" ctx
+    | Success (FollowUserRequest userId) -> 
+      return! JSON.ok (String "Todo") ctx
     | Failure _ -> 
       return! JSON.badRequest "invalid user follow request" ctx
   }
