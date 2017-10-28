@@ -33,3 +33,17 @@ type CreateTweetTable()=
   
   override this.Down() = 
     base.Delete.Table("Tweets") |> ignore
+
+[<Migration(201710280554L, "Creating Social Table")>]
+type CreateSocialTable()=
+  inherit Migration()
+
+  override this.Up() =
+    base.Create.Table("Social")
+      .WithColumn("Id").AsGuid().PrimaryKey()
+      .WithColumn("FollowerUserId").AsInt32().ForeignKey("Users", "Id").NotNullable()
+      .WithColumn("FollowingUserId").AsInt32().ForeignKey("Users", "Id").NotNullable()
+    |> ignore
+  
+  override this.Down() = 
+    base.Delete.Table("Tweets") |> ignore
