@@ -1,13 +1,16 @@
 $(function(){
   $("#tweetForm").submit(function(event){
+    var $this = $(this);
+    var $tweet = $("#tweet");
     event.preventDefault();
-    $tweet = $("#tweet")
+    $this.prop('disabled', true);
     $.ajax({
       url : "/tweets",
       type: "post",
       data: JSON.stringify({post : $tweet.val()}),
       contentType: "application/json"
     }).done(function(){
+      $this.prop('disabled', false);
       alert("successfully posted");
       $tweet.val('');
     }).fail(function(jqXHR, textStatus, errorThrown) {

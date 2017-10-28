@@ -68,6 +68,7 @@ let main argv =
       UserSignup.Suave.webPart getDataCtx sendEmail
       Auth.Suave.webpart getDataCtx
       Wall.Suave.webpart getDataCtx getStreamClient
+      Social.Suave.webpart ()
       UserProfile.Suave.webpart getDataCtx getStreamClient
     ]
     
