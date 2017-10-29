@@ -18,9 +18,14 @@ module Domain =
 
   } 
 
+  type IsFollowing = User -> UserId -> AsyncResult<bool, Exception>
+
 module Persistence =
   open Database
   open User
+  open Chessie.ErrorHandling
+  open FSharp.Data.Sql
+  open Chessie
   let createFollowing (getDataCtx : GetDataContext) (user : User) (UserId userId) = 
      
      let ctx = getDataCtx ()
@@ -31,6 +36,22 @@ module Persistence =
      social.FollowingUserId <- userId
 
      submitUpdates ctx
+
+  let isFollowing (getDataCtx : GetDataContext) (user : User) (UserId userId) = asyncTrial {
+    let ctx = getDataCtx ()
+    let (UserId followerUserId) = user.UserId
+
+    let! relationship = 
+      query {
+        for s in ctx.Public.Social do
+          where (s.FollowerUserId = followerUserId && 
+                  s.FollowingUserId = userId)
+      } |> Seq.tryHeadAsync |> AR.catch
+
+    match relationship with
+    | Some _ -> return true
+    | _ -> return false
+  }
    
 module GetStream = 
   open User

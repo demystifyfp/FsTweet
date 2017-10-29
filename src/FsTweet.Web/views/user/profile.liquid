@@ -12,7 +12,11 @@
       <p class="gravatar_name">@{{model.Username}}</p>
       {% if model.IsLoggedIn %}
         {% unless model.IsSelf %}
-          <a class="btn btn-primary" href="#" id="follow" data-user-id="{{model.UserId}}">Follow</a>
+          {% if model.IsFollowing %}
+            <a class="btn btn-primary disabled" href="#" id="unfollow">Following</a>
+          {% else %}
+            <a class="btn btn-primary" href="#" id="follow" data-user-id="{{model.UserId}}">Follow</a>
+          {% endif %}
         {% endunless %}
         <a class="btn btn-primary" href="/logout">Logout</a>
       {% endif %}

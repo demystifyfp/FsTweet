@@ -5,11 +5,17 @@ module Domain =
   open System.Security.Cryptography
   open Chessie.ErrorHandling
   open System
+  open Social.Domain
+ 
+  type UserProfileType =
+  | Self
+  | OtherNotFollowing
+  | OtherFollowing
 
   type UserProfile = {
     User : User
     GravatarUrl : string
-    IsSelf : bool
+    UserProfileType : UserProfileType
   }
   let gravatarUrl (emailAddress : UserEmailAddress) =
     use md5 = MD5.Create()
@@ -20,32 +26,39 @@ module Domain =
     |> String.concat ""
     |> sprintf "http://www.gravatar.com/avatar/%s?s=200"
 
-  let newProfile user = { 
+  let newProfile userProfileType user = { 
     User = user
     GravatarUrl = gravatarUrl user.EmailAddress
-    IsSelf = false
+    UserProfileType = userProfileType
   }
 
   type FindUserProfile = 
-    Username -> AsyncResult<UserProfile option, Exception>
-  let findUserProfile (findUser : FindUser) username = asyncTrial {
-    let! userMayBe = findUser username
-    return Option.map newProfile userMayBe
-  }
-
-  type HandleUserProfile = 
     Username -> User option -> AsyncResult<UserProfile option, Exception>
-  let handleUserProfile findUserProfile (username : Username) loggedInUser  = asyncTrial {
+  let findUserProfile (findUser : FindUser) (isFollowing : IsFollowing) (username : Username) loggedInUser  = asyncTrial {
     match loggedInUser with
     | None -> 
-      return! findUserProfile username
+      let! userMayBe = findUser username
+      return Option.map (newProfile OtherNotFollowing) userMayBe
     | Some (user : User) -> 
       if user.Username = username then
         let userProfile =
-          {newProfile user with IsSelf = true}
+          newProfile Self user
         return Some userProfile
       else  
-        return! findUserProfile username
+        let! userMayBe = findUser username
+        match userMayBe with
+        | Some otherUser -> 
+          let! isFollowingOtherUser = 
+            isFollowing user otherUser.UserId
+          if isFollowingOtherUser then
+            let userProfile = 
+              newProfile OtherFollowing otherUser
+            return Some userProfile
+          else  
+            let userProfile = 
+              newProfile OtherNotFollowing otherUser
+            return Some userProfile
+        | None -> return None
   }
 
 module Suave =
@@ -54,6 +67,7 @@ module Suave =
   open Auth.Suave
   open Suave
   open Domain
+  open Social
   open User
   open Suave.DotLiquid
   open Chessie
@@ -64,6 +78,7 @@ module Suave =
     GravatarUrl : string
     IsLoggedIn : bool
     IsSelf : bool
+    IsFollowing : bool
     UserId : int
     UserFeedToken : string
     ApiKey : string
@@ -72,12 +87,19 @@ module Suave =
 
   let newUserProfileViewModel (getStreamClient : GetStream.Client) (userProfile : UserProfile) = 
     let (UserId userId) = userProfile.User.UserId
+    let isSelf, isFollowing = 
+      match userProfile.UserProfileType with
+      | Self -> true, false
+      | OtherFollowing -> false, true
+      | OtherNotFollowing -> false, false
+
     let userFeed = GetStream.userFeed getStreamClient userId
     {
       Username = userProfile.User.Username.Value
       GravatarUrl = userProfile.GravatarUrl
       IsLoggedIn = false
-      IsSelf = userProfile.IsSelf
+      IsSelf = isSelf
+      IsFollowing = isFollowing
       UserId = userId
       UserFeedToken = userFeed.ReadOnlyToken
       ApiKey = getStreamClient.Config.ApiKey
@@ -105,14 +127,14 @@ module Suave =
     page "server_error.liquid" "something went wrong"
     
 
-  let renderUserProfile newUserProfileViewModel (handleUserProfile : HandleUserProfile) username loggedInUser  ctx = async {
+  let renderUserProfile newUserProfileViewModel (findUserProfile : FindUserProfile) username loggedInUser  ctx = async {
     match Username.TryCreate username with
     | Success validatedUsername -> 
       let isLoggedIn = Option.isSome loggedInUser
       let onSuccess = 
         onHandleUserProfileSuccess newUserProfileViewModel isLoggedIn
       let! webpart = 
-        handleUserProfile validatedUsername loggedInUser
+        findUserProfile validatedUsername loggedInUser
         |> AR.either onSuccess onHandleUserProfileFailure
       return! webpart ctx
     | Failure _ -> 
@@ -121,8 +143,9 @@ module Suave =
 
 
   let webpart (getDataCtx : GetDataContext) getStreamClient = 
-    let findUserProfile = findUserProfile (Persistence.findUser getDataCtx)
-    let handleUserProfile = handleUserProfile findUserProfile
+    let findUser = Persistence.findUser getDataCtx
+    let isFollowing = Persistence.isFollowing getDataCtx
+    let findUserProfile = findUserProfile findUser isFollowing
     let newUserProfileViewModel = newUserProfileViewModel getStreamClient
-    let renderUserProfile = renderUserProfile newUserProfileViewModel handleUserProfile
+    let renderUserProfile = renderUserProfile newUserProfileViewModel findUserProfile
     pathScan "/%s" (fun username -> mayRequiresAuth(renderUserProfile username))
