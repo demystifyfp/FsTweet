@@ -12,6 +12,11 @@ module Domain =
   | OtherNotFollowing
   | OtherFollowing
 
+  let userProfileType isFollowingOtherUser =
+    match isFollowingOtherUser with
+    | true -> OtherFollowing
+    | _ -> OtherNotFollowing 
+
   type UserProfile = {
     User : User
     GravatarUrl : string
@@ -34,15 +39,17 @@ module Domain =
 
   type FindUserProfile = 
     Username -> User option -> AsyncResult<UserProfile option, Exception>
-  let findUserProfile (findUser : FindUser) (isFollowing : IsFollowing) (username : Username) loggedInUser  = asyncTrial {
+  let findUserProfile 
+    (findUser : FindUser) (isFollowing : IsFollowing) 
+    (username : Username) loggedInUser  = asyncTrial {
+
     match loggedInUser with
     | None -> 
       let! userMayBe = findUser username
       return Option.map (newProfile OtherNotFollowing) userMayBe
     | Some (user : User) -> 
       if user.Username = username then
-        let userProfile =
-          newProfile Self user
+        let userProfile = newProfile Self user
         return Some userProfile
       else  
         let! userMayBe = findUser username
@@ -50,15 +57,13 @@ module Domain =
         | Some otherUser -> 
           let! isFollowingOtherUser = 
             isFollowing user otherUser.UserId
-          if isFollowingOtherUser then
-            let userProfile = 
-              newProfile OtherFollowing otherUser
-            return Some userProfile
-          else  
-            let userProfile = 
-              newProfile OtherNotFollowing otherUser
-            return Some userProfile
+          let userProfileType = 
+            userProfileType isFollowingOtherUser
+          let userProfile = 
+            newProfile userProfileType otherUser
+          return Some userProfile
         | None -> return None
+        
   }
 
 module Suave =
