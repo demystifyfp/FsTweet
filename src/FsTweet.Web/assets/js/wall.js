@@ -40,9 +40,18 @@ $(function(){
   timelineFeed.get({
     limit: 25
   }).then(function(body) {
-    $(body.results.reverse()).each(function(index, tweet){
-      renderTweet($("#wall"), tweet);
-    });
+    var timelineTweets = body.results
+    userFeed.get({
+      limit : 25
+    }).then(function(body){
+      var userTweets = body.results
+      var allTweets = $.merge(timelineTweets, userTweets)
+      allTweets.sort(function(t1, t2){
+        return new Date(t2.time) - new Date(t1.time);
+      })
+      $(allTweets.reverse()).each(function(index, tweet){
+        renderTweet($("#wall"), tweet);
+      });
+    })
   })
-
 });
