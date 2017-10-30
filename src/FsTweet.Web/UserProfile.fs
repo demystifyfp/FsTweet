@@ -26,25 +26,22 @@ module Domain =
     IsSelf = false
   }
 
-  let findUserProfile (findUser : FindUser) username = asyncTrial {
-    let! userMayBe = findUser username
-    match userMayBe with
-    | None -> return None
-    | Some user -> 
-       return Some (newProfile user)
-  }
+  type FindUserProfile = 
+    Username -> User option -> AsyncResult<UserProfile option, Exception>
 
-  let handleUserProfile findUserProfile (username : Username) loggedInUser  = asyncTrial {
+  let findUserProfile (findUser : FindUser) (username : Username) loggedInUser  = asyncTrial {
     match loggedInUser with
     | None -> 
-      return! findUserProfile username
+      let! userMayBe = findUser username
+      return Option.map newProfile userMayBe
     | Some (user : User) -> 
       if user.Username = username then
         let userProfile =
           {newProfile user with IsSelf = true}
         return Some userProfile
       else  
-        return! findUserProfile username
+        let! userMayBe = findUser username
+        return Option.map newProfile userMayBe
   }
 
 module Suave =
@@ -106,11 +103,11 @@ module Suave =
   } 
     
 
-  let renderUserProfile newUserProfileViewModel handleUserProfile username loggedInUser  ctx = async {
+  let renderUserProfile newUserProfileViewModel findUserProfile username loggedInUser  ctx = async {
     match Username.TryCreate username with
     | Success validatedUsername -> 
       let! webpart = 
-        handleUserProfile validatedUsername loggedInUser
+        findUserProfile validatedUsername loggedInUser
         |> handleUserProfileAsyncResult newUserProfileViewModel loggedInUser
       return! webpart ctx
     | Failure _ -> 
@@ -119,8 +116,8 @@ module Suave =
 
 
   let webpart (getDataCtx : GetDataContext) getStreamClient = 
-    let findUserProfile = findUserProfile (Persistence.findUser getDataCtx)
-    let handleUserProfile = handleUserProfile findUserProfile
+    let findUser = Persistence.findUser getDataCtx
+    let findUserProfile = findUserProfile findUser
     let newUserProfileViewModel = newUserProfileViewModel getStreamClient
-    let renderUserProfile = renderUserProfile newUserProfileViewModel handleUserProfile
+    let renderUserProfile = renderUserProfile newUserProfileViewModel findUserProfile
     pathScan "/%s" (fun username -> mayRequiresAuth(renderUserProfile username))
