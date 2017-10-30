@@ -48,9 +48,7 @@ module Persistence =
                   s.FollowingUserId = userId)
       } |> Seq.tryHeadAsync |> AR.catch
 
-    match relationship with
-    | Some _ -> return true
-    | _ -> return false
+    return relationship.IsSome
   }
    
 module GetStream = 
