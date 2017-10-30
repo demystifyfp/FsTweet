@@ -54,6 +54,7 @@ module Suave =
   open Suave.DotLiquid
   open Chessie.ErrorHandling
   open Chessie
+  open System
 
   type UserProfileViewModel = {
     Username : string
@@ -73,7 +74,7 @@ module Suave =
       Username = userProfile.User.Username.Value
       GravatarUrl = userProfile.GravatarUrl
       IsLoggedIn = false
-      IsSelf = false
+      IsSelf = userProfile.IsSelf
       UserId = userId
       UserFeedToken = userFeed.ReadOnlyToken
       ApiKey = getStreamClient.Config.ApiKey
@@ -86,29 +87,29 @@ module Suave =
   let renderProfileNotFound =
     page "not_found.liquid" "user not found"
   
-  let handleUserProfileAsyncResult newUserProfileViewModel loggedInUser aResult = async {
-    let! result = aResult |> Async.ofAsyncResult
-    match result with
-    | Success (Some (userProfile : UserProfile)) -> 
+  let onFindUserProfileSuccess newUserProfileViewModel isLoggedIn userProfileMayBe = 
+    match userProfileMayBe with
+    | Some (userProfile : UserProfile) -> 
       let vm = {
         newUserProfileViewModel userProfile with
-          IsLoggedIn = Option.isSome loggedInUser
-          IsSelf = userProfile.IsSelf }
-      return renderUserProfilePage vm
-    | Success None -> 
-      return renderProfileNotFound
-    | Failure ex -> 
-      printfn "%A" ex
-      return page "server_error.liquid" "something went wrong"
-  } 
-    
+          IsLoggedIn = isLoggedIn }
+      renderUserProfilePage vm
+    | None -> 
+      renderProfileNotFound
+
+  let onFindUserProfileFailure (ex : Exception) =
+    printfn "%A" ex
+    page "server_error.liquid" "something went wrong"
 
   let renderUserProfile newUserProfileViewModel findUserProfile username loggedInUser  ctx = async {
     match Username.TryCreate username with
     | Success validatedUsername -> 
+      let isLoggedIn = Option.isSome loggedInUser
+      let onSuccess = 
+        onFindUserProfileSuccess newUserProfileViewModel isLoggedIn
       let! webpart = 
         findUserProfile validatedUsername loggedInUser
-        |> handleUserProfileAsyncResult newUserProfileViewModel loggedInUser
+        |> AR.either onSuccess onFindUserProfileFailure
       return! webpart ctx
     | Failure _ -> 
       return! renderProfileNotFound ctx
