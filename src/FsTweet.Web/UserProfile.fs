@@ -12,10 +12,7 @@ module Domain =
   | OtherNotFollowing
   | OtherFollowing
 
-  let userProfileType isFollowingOtherUser =
-    match isFollowingOtherUser with
-    | true -> OtherFollowing
-    | _ -> OtherNotFollowing 
+  
 
   type UserProfile = {
     User : User
@@ -57,13 +54,14 @@ module Domain =
         | Some otherUser -> 
           let! isFollowingOtherUser = 
             isFollowing user otherUser.UserId
-          let userProfileType = 
-            userProfileType isFollowingOtherUser
+          let userProfileType =
+            if isFollowingOtherUser then
+              OtherFollowing
+            else OtherNotFollowing 
           let userProfile = 
             newProfile userProfileType otherUser
           return Some userProfile
         | None -> return None
-        
   }
 
 module Suave =
@@ -117,7 +115,7 @@ module Suave =
   let renderProfileNotFound =
     page "not_found.liquid" "user not found"
 
-  let onHandleUserProfileSuccess newUserProfileViewModel isLoggedIn userProfileMayBe = 
+  let onFindUserProfileSuccess newUserProfileViewModel isLoggedIn userProfileMayBe = 
     match userProfileMayBe with
     | Some (userProfile : UserProfile) -> 
       let vm = {
@@ -127,7 +125,7 @@ module Suave =
     | None -> 
       renderProfileNotFound
 
-  let onHandleUserProfileFailure (ex : Exception) =
+  let onFindUserProfileFailure (ex : Exception) =
     printfn "%A" ex
     page "server_error.liquid" "something went wrong"
     
@@ -137,10 +135,10 @@ module Suave =
     | Success validatedUsername -> 
       let isLoggedIn = Option.isSome loggedInUser
       let onSuccess = 
-        onHandleUserProfileSuccess newUserProfileViewModel isLoggedIn
+        onFindUserProfileSuccess newUserProfileViewModel isLoggedIn
       let! webpart = 
         findUserProfile validatedUsername loggedInUser
-        |> AR.either onSuccess onHandleUserProfileFailure
+        |> AR.either onSuccess onFindUserProfileFailure
       return! webpart ctx
     | Failure _ -> 
       return! renderProfileNotFound ctx
