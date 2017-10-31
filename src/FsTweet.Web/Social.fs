@@ -20,12 +20,16 @@ module Domain =
 
   type IsFollowing = User -> UserId -> AsyncResult<bool, Exception>
 
+  type FindFollowers = UserId -> AsyncResult<User list, Exception>
+
 module Persistence =
   open Database
   open User
   open Chessie.ErrorHandling
   open FSharp.Data.Sql
   open Chessie
+  open User.Persistence
+  open System.Linq
   let createFollowing (getDataCtx : GetDataContext) (user : User) (UserId userId) = 
      
      let ctx = getDataCtx ()
@@ -49,6 +53,27 @@ module Persistence =
       } |> Seq.tryHeadAsync |> AR.catch
 
     return relationship.IsSome
+  }
+
+  let findFollowers (getDataCtx : GetDataContext) (UserId userId) = asyncTrial {
+    let ctx = getDataCtx()
+
+    let selectFollowersQuery = query {
+        for s in ctx.Public.Social do
+        where (s.FollowingUserId = userId)
+        select s.FollowerUserId
+    }
+
+    let! followers = 
+      query {
+        for u in ctx.Public.Users do
+        where (selectFollowersQuery.Contains(u.Id))
+        select u
+      } |> Seq.executeQueryAsync |> AR.catch
+
+    let users = mapUserEntities followers
+
+    return! users
   }
    
 module GetStream = 
@@ -82,6 +107,29 @@ module Suave =
         return FollowUserRequest userId 
       }
 
+
+  type UserDto = {
+    Username : string
+  } with
+   static member ToJson (u:UserDto) = 
+      json { 
+          do! Json.write "username" u.Username
+      }  
+   
+  type UserDtoList = UserDtoList of (UserDto list) with
+    static member ToJson (UserDtoList userDtos) = 
+      let usersJson = 
+        userDtos
+        |> List.map (Json.serializeWith UserDto.ToJson)
+      json {
+        do! Json.write "users" usersJson
+      }
+  let mapUsersToUserDtoList (users : User list) =
+    users
+    |> List.map (fun user -> {Username = user.Username.Value})
+    |> UserDtoList
+
+
   let onFollowUserSuccess () =
     Successful.NO_CONTENT
   let onFollowUserFailure (ex : System.Exception) =
@@ -99,9 +147,29 @@ module Suave =
       return! JSON.badRequest "invalid user follow request" ctx
   }
 
+  let onFindFollowersFailure (ex : System.Exception) =
+    printfn "%A" ex
+    JSON.internalError
+
+  let onFindFollowersSuccess (users : User list) =
+    mapUsersToUserDtoList users
+    |> Json.serialize
+    |> JSON.ok
+
+  let fetchFollowers (findFollowers: FindFollowers) userId ctx = async {
+    let! webpart =
+      findFollowers (UserId userId)
+      |> AR.either onFindFollowersSuccess onFindFollowersFailure
+    return! webpart ctx
+  }
+
   let webpart getDataCtx getStreamClient =
     let createFollowing = createFollowing getDataCtx
     let subscribe = GetStream.subscribe getStreamClient
     let followUser = followUser subscribe createFollowing
     let handleFollowUser = handleFollowUser followUser
-    POST >=> path "/follow" >=> requiresAuth2 handleFollowUser
+    let findFollowers = findFollowers getDataCtx
+    choose [
+      GET >=> pathScan "/%d/followers" (fetchFollowers findFollowers)
+      POST >=> path "/follow" >=> requiresAuth2 handleFollowUser
+    ]
