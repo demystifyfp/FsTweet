@@ -21,6 +21,7 @@ module Domain =
   type IsFollowing = User -> UserId -> AsyncResult<bool, Exception>
 
   type FindFollowers = UserId -> AsyncResult<User list, Exception>
+  type FindFollowingUsers = UserId -> AsyncResult<User list, Exception>
 
 module Persistence =
   open Database
@@ -70,10 +71,27 @@ module Persistence =
         where (selectFollowersQuery.Contains(u.Id))
         select u
       } |> Seq.executeQueryAsync |> AR.catch
+      
+    return! mapUserEntities followers
+  }
 
-    let users = mapUserEntities followers
+  let findFollowingUsers (getDataCtx : GetDataContext) (UserId userId) = asyncTrial {
+    let ctx = getDataCtx()
 
-    return! users
+    let selectFollowingUsersQuery = query {
+        for s in ctx.Public.Social do
+        where (s.FollowerUserId = userId)
+        select s.FollowingUserId
+    }
+
+    let! followingUsers = 
+      query {
+        for u in ctx.Public.Users do
+        where (selectFollowingUsersQuery.Contains(u.Id))
+        select u
+      } |> Seq.executeQueryAsync |> AR.catch
+
+    return! mapUserEntities followingUsers
   }
    
 module GetStream = 
@@ -150,8 +168,16 @@ module Suave =
   let onFindFollowersFailure (ex : System.Exception) =
     printfn "%A" ex
     JSON.internalError
-
+    
   let onFindFollowersSuccess (users : User list) =
+    mapUsersToUserDtoList users
+    |> Json.serialize
+    |> JSON.ok
+  let onFindFollowingUsersFailure (ex : System.Exception) =
+    printfn "%A" ex
+    JSON.internalError
+
+  let onFindFollowingUsersSuccess (users : User list) =
     mapUsersToUserDtoList users
     |> Json.serialize
     |> JSON.ok
@@ -162,6 +188,12 @@ module Suave =
       |> AR.either onFindFollowersSuccess onFindFollowersFailure
     return! webpart ctx
   }
+  let fetchFollowingUsers (findFollowingUsers: FindFollowingUsers) userId ctx = async {
+    let! webpart =
+      findFollowingUsers (UserId userId)
+      |> AR.either onFindFollowingUsersSuccess onFindFollowingUsersFailure
+    return! webpart ctx
+  }
 
   let webpart getDataCtx getStreamClient =
     let createFollowing = createFollowing getDataCtx
@@ -169,7 +201,9 @@ module Suave =
     let followUser = followUser subscribe createFollowing
     let handleFollowUser = handleFollowUser followUser
     let findFollowers = findFollowers getDataCtx
+    let findFollowingUsers = findFollowingUsers getDataCtx
     choose [
       GET >=> pathScan "/%d/followers" (fetchFollowers findFollowers)
+      GET >=> pathScan "/%d/following" (fetchFollowingUsers findFollowingUsers)
       POST >=> path "/follow" >=> requiresAuth2 handleFollowUser
     ]
