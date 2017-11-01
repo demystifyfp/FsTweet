@@ -19,7 +19,6 @@ module Domain =
   } 
 
   type IsFollowing = User -> UserId -> AsyncResult<bool, Exception>
-
   type FindFollowers = UserId -> AsyncResult<User list, Exception>
   type FindFollowingUsers = UserId -> AsyncResult<User list, Exception>
 
@@ -165,19 +164,11 @@ module Suave =
       return! JSON.badRequest "invalid user follow request" ctx
   }
 
-  let onFindFollowersFailure (ex : System.Exception) =
-    printfn "%A" ex
-    JSON.internalError
-    
-  let onFindFollowersSuccess (users : User list) =
-    mapUsersToUserDtoList users
-    |> Json.serialize
-    |> JSON.ok
-  let onFindFollowingUsersFailure (ex : System.Exception) =
+  let onFindUsersFailure (ex : System.Exception) =
     printfn "%A" ex
     JSON.internalError
 
-  let onFindFollowingUsersSuccess (users : User list) =
+  let onFindUsersSuccess (users : User list) =
     mapUsersToUserDtoList users
     |> Json.serialize
     |> JSON.ok
@@ -185,13 +176,13 @@ module Suave =
   let fetchFollowers (findFollowers: FindFollowers) userId ctx = async {
     let! webpart =
       findFollowers (UserId userId)
-      |> AR.either onFindFollowersSuccess onFindFollowersFailure
+      |> AR.either onFindUsersSuccess onFindUsersFailure
     return! webpart ctx
   }
   let fetchFollowingUsers (findFollowingUsers: FindFollowingUsers) userId ctx = async {
     let! webpart =
       findFollowingUsers (UserId userId)
-      |> AR.either onFindFollowingUsersSuccess onFindFollowingUsersFailure
+      |> AR.either onFindUsersSuccess onFindUsersFailure
     return! webpart ctx
   }
 

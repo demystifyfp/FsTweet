@@ -117,3 +117,8 @@ p.well {
   font-size: 30px;
   color: grey;
 }
+
+.user-card {
+  margin-top: 3 px;
+  font-size: 25px;
+}
