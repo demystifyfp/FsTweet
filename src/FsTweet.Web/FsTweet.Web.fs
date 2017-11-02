@@ -79,8 +79,8 @@ let main argv =
 
   let ipZero = IPAddress.Parse("0.0.0.0")
   let port = 
-    Environment.GetEnvironmentVariable "FSTWEET_SERVER_PORT"
-    
+    Environment.GetEnvironmentVariable "PORT"
+
   let serverConfig = 
     {defaultConfig with 
       serverKey = serverKey
