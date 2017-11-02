@@ -5,6 +5,7 @@
 
 open Fake
 open Fake.FluentMigratorHelper
+open System.IO
 
 // Directories
 let buildDir  = "./build/"
@@ -26,11 +27,11 @@ Target "BuildMigrations" (fun _ ->
   |> MSBuildDebug buildDir "Build" 
   |> Log "MigrationBuild-Output: "
 )
-
+let localDbConnString = @"Server=127.0.0.1;Port=5432;Database=FsTweet;User Id=postgres;Password=test;"
 let connString = 
   environVarOrDefault 
     "FSTWEET_DB_CONN_STRING"
-    @"Server=127.0.0.1;Port=5432;Database=FsTweet;User Id=postgres;Password=test;"
+    localDbConnString
 
 setEnvironVar "FSTWEET_DB_CONN_STRING" connString
 let dbConnection = ConnectionString (connString, DatabaseProvider.PostgreSQL)
@@ -71,11 +72,26 @@ Target "Assets" (fun _ ->
   copyToBuildDir "./src/FsTweet.Web/assets" "assets"
 )
 
+let swapConnectionString (oldValue: string) (newValue : string) =
+  let dbFilePath = "./src/FsTweet.Web/Db.fs"
+  let dbFileContent = File.ReadAllText dbFilePath
+  let newDbFileContent = dbFileContent.Replace(oldValue, newValue)
+  File.WriteAllText(dbFilePath, newDbFileContent)
+
+Target "ReplaceDbConnStringForBuild" (fun _ -> 
+  swapConnectionString localDbConnString connString
+)
+Target "RevertDbConnStringChange" (fun _ -> 
+  swapConnectionString connString localDbConnString
+)
+
 // Build order
 "Clean"
 ==> "BuildMigrations"
 ==> "RunMigrations"
+==> "ReplaceDbConnStringForBuild"
 ==> "Build"
+==> "RevertDbConnStringChange"
 ==> "Views"
 ==> "Assets"
 ==> "Run"
