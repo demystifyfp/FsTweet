@@ -1,0 +1,1 @@
+web: mono build/FsTweet.Web.exe
