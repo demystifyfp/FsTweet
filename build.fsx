@@ -39,9 +39,14 @@ Target "RunMigrations" (fun _ ->
   MigrateToLatest dbConnection [migrationsAssembly] DefaultMigrationOptions
 )
 
+let env = environVar "FSTWEET_ENVIRONMENT" 
+
+let buildConfig = 
+  if env = "dev" then MSBuildDebug else MSBuildRelease
+
 Target "Build" (fun _ ->
   !! "src/FsTweet.Web/*.fsproj"
-  |> MSBuildDebug buildDir "Build"
+  |> buildConfig buildDir "Build"
   |> Log "AppBuild-Output: "
 )
 
@@ -76,4 +81,4 @@ Target "Assets" (fun _ ->
 ==> "Run"
 
 // start build
-RunTargetOrDefault "Build"
+RunTargetOrDefault "Assets"

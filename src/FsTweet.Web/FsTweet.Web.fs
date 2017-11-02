@@ -10,6 +10,7 @@ open Suave.Files
 open Database
 open System
 open Email
+open System.Net
 
 let currentPath =
   Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
@@ -75,8 +76,15 @@ let main argv =
   let serverKey = 
     Environment.GetEnvironmentVariable "FSTWEET_SERVER_KEY"
     |> ServerKey.fromBase64
+
+  let ipZero = IPAddress.Parse("0.0.0.0")
+  let port = 
+    Environment.GetEnvironmentVariable "FSTWEET_SERVER_PORT"
+    
   let serverConfig = 
-    {defaultConfig with serverKey = serverKey}
+    {defaultConfig with 
+      serverKey = serverKey
+      bindings=[HttpBinding.create HTTP ipZero (uint16 port)]}
 
   startWebServer serverConfig app
   0
