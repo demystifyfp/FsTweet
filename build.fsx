@@ -37,8 +37,6 @@ setEnvironVar "FSTWEET_DB_CONN_STRING" connString
 let dbConnection = ConnectionString (connString, DatabaseProvider.PostgreSQL)
 
 Target "RunMigrations" (fun _ -> 
-  let d = DirectoryInfo(buildDir)
-  d.EnumerateFiles() |> Seq.iter (fun f -> printfn "%A" f.FullName)
   MigrateToLatest dbConnection [migrationsAssembly] DefaultMigrationOptions
 )
 
