@@ -1,3 +1,2 @@
-
 [config]
 command = build.cmd Deploy
