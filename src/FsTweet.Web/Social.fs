@@ -154,7 +154,7 @@ module Suave =
     JSON.internalError
 
   let handleFollowUser (followUser : FollowUser) (user : User) ctx = async {
-    match JSON.deserialize ctx.request with
+    match JSON.deserialize Json.tryDeserialize ctx.request with
     | Success (FollowUserRequest userId) -> 
       let! webpart =
         followUser user (UserId userId)

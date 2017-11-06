@@ -128,7 +128,7 @@ module Suave =
       JSON.internalError
 
   let handleNewTweet publishTweet (user : User) ctx = async {
-    match JSON.deserialize ctx.request  with
+    match JSON.deserialize Json.tryDeserialize ctx.request  with
     | Success (PostRequest post) -> 
       match Post.TryCreate post with
       | Success post -> 
