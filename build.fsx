@@ -99,7 +99,12 @@ Target "Deploy" Kudu.kuduSync
 ==> "RevertDbConnStringChange"
 ==> "Views"
 ==> "Assets"
+
+
+"Assets"
 ==> "Run"
+
+"Assets"
 ==> "StageFiles"
 ==> "Deploy"
 
