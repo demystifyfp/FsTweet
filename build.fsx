@@ -9,7 +9,7 @@ open System.IO
 open Fake.Azure
 
 // Directories
-let buildDir  = "./bin/"
+let buildDir  = "./build"
 let migrationsAssembly = 
   combinePaths buildDir "FsTweet.Db.Migrations.dll"
 
@@ -49,7 +49,7 @@ Target "Build" (fun _ ->
 
 Target "Run" (fun _ -> 
   ExecProcess 
-      (fun info -> info.FileName <- "./bin/FsTweet.Web.exe")
+      (fun info -> info.FileName <- "./build/FsTweet.Web.exe")
       (System.TimeSpan.FromDays 1.)
   |> ignore
 )
