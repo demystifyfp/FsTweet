@@ -18,9 +18,7 @@ let version = "0.1"  // or retrieve from CI server
 
 // Targets
 Target "Clean" (fun _ ->
-  let dirInfo = DirectoryInfo(buildDir)
-  if dirInfo.Exists then
-    CleanDirs [buildDir]
+  CleanDirs [buildDir]
 )
 
 Target "BuildMigrations" (fun _ ->
