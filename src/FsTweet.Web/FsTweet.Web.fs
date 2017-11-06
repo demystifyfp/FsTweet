@@ -79,7 +79,7 @@ let main argv =
 
   let ipZero = IPAddress.Parse("0.0.0.0")
   let port = 
-    Environment.GetEnvironmentVariable "PORT"
+    if argv.Length > 1 then argv.[0] else "8080"
 
   let serverConfig = 
     {defaultConfig with 

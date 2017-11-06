@@ -6,11 +6,10 @@
 open Fake
 open Fake.FluentMigratorHelper
 open System.IO
+open Fake.Azure
 
 // Directories
 let buildDir  = "./build/"
-let deployDir = "./deploy/"
-
 let migrationsAssembly = 
   combinePaths buildDir "FsTweet.Db.Migrations.dll"
 
@@ -19,7 +18,7 @@ let version = "0.1"  // or retrieve from CI server
 
 // Targets
 Target "Clean" (fun _ ->
-  CleanDirs [buildDir; deployDir]
+  CleanDirs [buildDir]
 )
 
 Target "BuildMigrations" (fun _ ->
@@ -85,16 +84,24 @@ Target "RevertDbConnStringChange" (fun _ ->
   swapConnectionString connString localDbConnString
 )
 
+Target "StageFiles" ( fun _ ->
+  FileHelper.CopyFile Kudu.deploymentTemp "web.config"
+  Kudu.stageFolder buildDir (fun _ -> true))
+
+Target "Deploy" Kudu.kuduSync
+
 // Build order
 "Clean"
 ==> "BuildMigrations"
 ==> "RunMigrations"
-==> "ReplaceDbConnStringForBuild"
+=?> ("ReplaceDbConnStringForBuild", hasBuildParam "Deploy")
 ==> "Build"
-==> "RevertDbConnStringChange"
+=?> ("RevertDbConnStringChange", hasBuildParam "Deploy")
 ==> "Views"
 ==> "Assets"
 ==> "Run"
+=?> ("StageFiles", hasBuildParam "Deploy")
+==> "Deploy"
 
 // start build
 RunTargetOrDefault "Assets"
