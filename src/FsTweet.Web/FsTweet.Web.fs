@@ -78,6 +78,7 @@ let main argv =
     |> ServerKey.fromBase64
 
   let ipZero = IPAddress.Parse("0.0.0.0")
+  
   let port = 
     if argv.Length > 1 then argv.[0] else "8080"
 
