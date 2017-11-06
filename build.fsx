@@ -13,9 +13,6 @@ let buildDir  = "./build/"
 let migrationsAssembly = 
   combinePaths buildDir "FsTweet.Db.Migrations.dll"
 
-// version info
-let version = "0.1"  // or retrieve from CI server
-
 // Targets
 Target "Clean" (fun _ ->
   CleanDirs [buildDir]
