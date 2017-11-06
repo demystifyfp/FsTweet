@@ -94,13 +94,13 @@ Target "Deploy" Kudu.kuduSync
 "Clean"
 ==> "BuildMigrations"
 ==> "RunMigrations"
-=?> ("ReplaceDbConnStringForBuild", hasBuildParam "Deploy")
+==> "ReplaceDbConnStringForBuild"
 ==> "Build"
-=?> ("RevertDbConnStringChange", hasBuildParam "Deploy")
+==> "RevertDbConnStringChange"
 ==> "Views"
 ==> "Assets"
 ==> "Run"
-=?> ("StageFiles", hasBuildParam "Deploy")
+==> "StageFiles"
 ==> "Deploy"
 
 // start build
