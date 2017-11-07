@@ -90,7 +90,6 @@ Target "RevertDbConnStringChange" (fun _ ->
 )
 
 Target "CopyWebConfig" ( fun _ ->
-  FileHelper.CopyFile Kudu.deploymentTemp "iisnode.yml"
   FileHelper.CopyFile Kudu.deploymentTemp "web.config")
 
 Target "Deploy" Kudu.kuduSync
