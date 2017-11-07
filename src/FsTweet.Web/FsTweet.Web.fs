@@ -11,12 +11,15 @@ open Database
 open System
 open Email
 open System.Net
+open DotLiquid.NamingConventions
 
 let currentPath =
   Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
 
 let initDotLiquid () =
-  setCSharpNamingConvention ()
+  //setCSharpNamingConvention ()
+  DotLiquid.Template.NamingConvention <- CSharpNamingConvention()
+
   let templatesDir = Path.Combine(currentPath, "views")
   setTemplatesDir templatesDir
   DotLiquid.Template.NamingConvention.GetMemberName("userId")
