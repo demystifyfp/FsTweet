@@ -17,12 +17,10 @@ let currentPath =
   Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
 
 let initDotLiquid () =
-  //setCSharpNamingConvention ()
-  DotLiquid.Template.NamingConvention <- CSharpNamingConvention()
+  setCSharpNamingConvention ()
 
   let templatesDir = Path.Combine(currentPath, "views")
   setTemplatesDir templatesDir
-  DotLiquid.Template.NamingConvention.GetMemberName("userId")
 
 let serveAssets =
   let faviconPath = 
@@ -32,10 +30,10 @@ let serveAssets =
     path "/favicon.ico" >=> file faviconPath
   ]
 
-let check1, check2 = (initDotLiquid (), CSharpNamingConvention().GetMemberName("userId"))
-
 [<EntryPoint>]
 let main argv =
+
+  initDotLiquid ()
 
   let fsTweetConnString = 
    Environment.GetEnvironmentVariable  "FSTWEET_DB_CONN_STRING"
@@ -70,7 +68,6 @@ let main argv =
   let app = 
     choose [
       serveAssets
-      path "/check" >=> Successful.OK ("-->" + check1 + "," + check2)
       path "/" >=> page "guest/home.liquid" ""
       UserSignup.Suave.webPart getDataCtx sendEmail
       Auth.Suave.webpart getDataCtx
