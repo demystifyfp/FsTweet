@@ -32,7 +32,7 @@ let serveAssets =
     path "/favicon.ico" >=> file faviconPath
   ]
 
-let check = initDotLiquid () 
+let check1, check2 = (initDotLiquid (), CSharpNamingConvention().GetMemberName("userId"))
 
 [<EntryPoint>]
 let main argv =
@@ -70,7 +70,7 @@ let main argv =
   let app = 
     choose [
       serveAssets
-      path "/check" >=> Successful.OK ("-->" + check)
+      path "/check" >=> Successful.OK ("-->" + check1 + "," + check2)
       path "/" >=> page "guest/home.liquid" ""
       UserSignup.Suave.webPart getDataCtx sendEmail
       Auth.Suave.webpart getDataCtx
