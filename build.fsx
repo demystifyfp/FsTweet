@@ -8,8 +8,16 @@ open Fake.FluentMigratorHelper
 open System.IO
 open Fake.Azure
 
+
+let env = environVar "FSTWEET_ENVIRONMENT" 
+
 // Directories
-let buildDir  = "./build"
+let buildDir  = 
+  if env = "dev" then 
+    "./build" 
+  else 
+    Kudu.deploymentTemp
+  
 let migrationsAssembly = 
   combinePaths buildDir "FsTweet.Db.Migrations.dll"
 
@@ -36,7 +44,7 @@ Target "RunMigrations" (fun _ ->
   MigrateToLatest dbConnection [migrationsAssembly] DefaultMigrationOptions
 )
 
-let env = environVar "FSTWEET_ENVIRONMENT" 
+
 
 let buildConfig = 
   if env = "dev" then MSBuildDebug else MSBuildRelease
@@ -81,9 +89,8 @@ Target "RevertDbConnStringChange" (fun _ ->
   swapConnectionString connString localDbConnString
 )
 
-Target "StageFiles" ( fun _ ->
-  FileHelper.CopyFile Kudu.deploymentTemp "web.config"
-  Kudu.stageFolder buildDir (fun _ -> true))
+Target "CopyWebConfig" ( fun _ ->
+  FileHelper.CopyFile Kudu.deploymentTemp "web.config")
 
 Target "Deploy" Kudu.kuduSync
 
@@ -102,7 +109,7 @@ Target "Deploy" Kudu.kuduSync
 ==> "Run"
 
 "Assets"
-==> "StageFiles"
+==> "CopyWebConfig"
 ==> "Deploy"
 
 // start build
