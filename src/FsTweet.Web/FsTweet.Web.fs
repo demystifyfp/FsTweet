@@ -11,12 +11,16 @@ open Database
 open System
 open Email
 open System.Net
+open DotLiquid
 
 let currentPath =
   Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
 
 let initDotLiquid () =
+  printfn "setting csharp naming convention"
   setCSharpNamingConvention ()
+  Template.NamingConvention.GetMemberName("userId")
+  |> printfn "Naming Convention Check : %s"
   let templatesDir = Path.Combine(currentPath, "views")
   setTemplatesDir templatesDir
 
