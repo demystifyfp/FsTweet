@@ -53,9 +53,6 @@
     <Compile Include="Social.fs" />
     <Compile Include="UserProfile.fs" />
     <Compile Include="FsTweet.Web.fs" />
-    <Content Include="web.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <Choose>
