@@ -11,14 +11,11 @@ open Database
 open System
 open Email
 open System.Net
-open DotLiquid.NamingConventions
 
 let currentPath =
   Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
 
 let initDotLiquid () =
-  setCSharpNamingConvention ()
-
   let templatesDir = Path.Combine(currentPath, "views")
   setTemplatesDir templatesDir
 
@@ -32,8 +29,8 @@ let serveAssets =
 
 [<EntryPoint>]
 let main argv =
-
   initDotLiquid ()
+  setCSharpNamingConvention ()
 
   let fsTweetConnString = 
    Environment.GetEnvironmentVariable  "FSTWEET_DB_CONN_STRING"
