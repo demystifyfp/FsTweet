@@ -20,7 +20,8 @@ let initDotLiquid () =
   printfn "setting csharp naming convention"
   setCSharpNamingConvention ()
   Template.NamingConvention.GetMemberName("userId")
-  |> printfn "Naming Convention Check : %s"
+  |> sprintf "Naming Convention Check : %s"
+  |> Diagnostics.Trace.TraceInformation
   let templatesDir = Path.Combine(currentPath, "views")
   setTemplatesDir templatesDir
 
