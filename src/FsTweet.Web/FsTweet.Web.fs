@@ -32,9 +32,10 @@ let serveAssets =
     path "/favicon.ico" >=> file faviconPath
   ]
 
+let check = initDotLiquid () 
+
 [<EntryPoint>]
 let main argv =
-  let namingConvention = initDotLiquid ()
 
   let fsTweetConnString = 
    Environment.GetEnvironmentVariable  "FSTWEET_DB_CONN_STRING"
@@ -69,7 +70,7 @@ let main argv =
   let app = 
     choose [
       serveAssets
-      path "/check" >=> Successful.OK namingConvention
+      path "/check" >=> Successful.OK ("-->" + check)
       path "/" >=> page "guest/home.liquid" ""
       UserSignup.Suave.webPart getDataCtx sendEmail
       Auth.Suave.webpart getDataCtx
