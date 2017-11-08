@@ -84,16 +84,16 @@ Target "VerifyLocalDbConnString" (fun _ ->
     failwith "local db connection string mismatch"
 )
  
-let swapConnectionString (oldValue: string) (newValue : string) =
+let swapDbFileContent (oldValue: string) (newValue : string) =
   let dbFileContent = File.ReadAllText dbFilePath
   let newDbFileContent = dbFileContent.Replace(oldValue, newValue)
   File.WriteAllText(dbFilePath, newDbFileContent)
 
 Target "ReplaceLocalDbConnStringForBuild" (fun _ -> 
-  swapConnectionString localDbConnString connString
+  swapDbFileContent localDbConnString connString
 )
 Target "RevertLocalDbConnStringChange" (fun _ -> 
-  swapConnectionString connString localDbConnString
+  swapDbFileContent connString localDbConnString
 )
 
 Target "CopyWebConfig" ( fun _ ->
