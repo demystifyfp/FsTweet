@@ -76,16 +76,23 @@ Target "Assets" (fun _ ->
   copyToBuildDir "./src/FsTweet.Web/assets" "assets"
 )
 
+let dbFilePath = "./src/FsTweet.Web/Db.fs"
+
+Target "VerifyLocalDbConnString" (fun _ ->
+  let dbFileContent = File.ReadAllText dbFilePath
+  if not (dbFileContent.Contains(localDbConnString)) then
+    failwith "local db connection string mismatch"
+)
+ 
 let swapConnectionString (oldValue: string) (newValue : string) =
-  let dbFilePath = "./src/FsTweet.Web/Db.fs"
   let dbFileContent = File.ReadAllText dbFilePath
   let newDbFileContent = dbFileContent.Replace(oldValue, newValue)
   File.WriteAllText(dbFilePath, newDbFileContent)
 
-Target "ReplaceDbConnStringForBuild" (fun _ -> 
+Target "ReplaceLocalDbConnStringForBuild" (fun _ -> 
   swapConnectionString localDbConnString connString
 )
-Target "RevertDbConnStringChange" (fun _ -> 
+Target "RevertLocalDbConnStringChange" (fun _ -> 
   swapConnectionString connString localDbConnString
 )
 
@@ -98,9 +105,10 @@ Target "Deploy" Kudu.kuduSync
 "Clean"
 ==> "BuildMigrations"
 ==> "RunMigrations"
-==> "ReplaceDbConnStringForBuild"
+==> "VerifyLocalDbConnString"
+==> "ReplaceLocalDbConnStringForBuild"
 ==> "Build"
-==> "RevertDbConnStringChange"
+==> "RevertLocalDbConnStringChange"
 ==> "Views"
 ==> "Assets"
 
