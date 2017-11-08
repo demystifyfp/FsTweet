@@ -9,7 +9,6 @@ $(function(){
       data: JSON.stringify({userId : userId}),
       contentType: "application/json"
     }).done(function(){
-      alert("successfully followed");
       $this.attr('id', 'unfollow');
       $this.html('Following');
       $this.addClass('disabled');

@@ -11,7 +11,6 @@ $(function(){
       contentType: "application/json"
     }).done(function(){
       $this.prop('disabled', false);
-      alert("successfully posted");
       $tweet.val('');
     }).fail(function(jqXHR, textStatus, errorThrown) {
       console.log({jqXHR : jqXHR, textStatus : textStatus, errorThrown: errorThrown})
