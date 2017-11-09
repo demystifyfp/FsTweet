@@ -14,16 +14,15 @@ let parse req =
   |> Json.tryParse
   |> ofChoice
 
-let inline deserialize2< ^a when (^a or FromJsonDefaults) 
-                          : (static member FromJson: ^a -> ^a Json)> 
-                          req : Result< ^a, string> =
-  parse req 
-  |> bind (fun json -> 
-            json 
-            |> Json.tryDeserialize 
-            |> ofChoice)
-
 // Note: Compiles only with F# 4.1 or above
+// let inline deserialize< ^a when (^a or FromJsonDefaults) 
+//                           : (static member FromJson: ^a -> ^a Json)> 
+//                           req : Result< ^a, string> =
+//   parse req 
+//   |> bind (fun json -> 
+//             json 
+//             |> Json.tryDeserialize 
+//             |> ofChoice)
 
 // For F# 4.0 and below
 (* If you are using F# 4.1 or above, delete the this function and uncomment the above function*)
