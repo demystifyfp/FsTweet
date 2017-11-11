@@ -11,6 +11,11 @@ open Database
 open System
 open Email
 open System.Net
+open Logary.Configuration
+open Logary
+open Logary.Targets
+open Hopac
+
 
 let currentPath =
   Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
@@ -26,6 +31,15 @@ let serveAssets =
     pathRegex "/assets/*" >=> browseHome
     path "/favicon.ico" >=> file faviconPath
   ]
+
+let readUserState ctx key : 'value option =
+  ctx.userState 
+  |> Map.tryFind key 
+  |> Option.map (fun x -> x :?> 'value)
+let logIfError (logger : Logger) ctx = 
+  readUserState ctx "err"
+  |> Option.iter logger.logSimple
+  succeed
 
 [<EntryPoint>]
 let main argv =
@@ -82,10 +96,23 @@ let main argv =
   let port = 
     Environment.GetEnvironmentVariable "PORT"
 
+  let targets = withTarget (Console.create Console.empty "console")
+  let rules = withRule (Rule.createForTarget "console")
+  let logaryConf = targets >> rules
+
+  use logary =
+    withLogaryManager "FsTweet.Web" logaryConf |> run
+
+  let logger =
+    logary.getLogger (PointName [|"Suave"|])
+
   let serverConfig = 
     {defaultConfig with 
       serverKey = serverKey
       bindings=[HttpBinding.create HTTP ipZero (uint16 port)]}
 
-  startWebServer serverConfig app
+  let appWithLogger = 
+    app >=> context (logIfError logger)
+  startWebServer serverConfig appWithLogger
+
   0

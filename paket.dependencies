@@ -6,6 +6,8 @@ nuget Chiron
 nuget DotLiquid 2.0.64
 nuget FAKE
 nuget FSharp.Core
+nuget Logary.Adapters.Suave
+nuget NodaTime 1.3.2
 nuget stream-net
 nuget Suave
 nuget Suave.DotLiquid
