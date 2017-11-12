@@ -8,7 +8,7 @@ BCrypt.Net-Next
 Chiron
 stream-net
 NodaTime
-Logary.Adapters.Suave
+Logary
 group Database
 SQLProvider
 Npgsql
