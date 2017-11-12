@@ -122,19 +122,22 @@ module Suave =
 
   let onPublishTweetFailure (user : User) (err : PublishTweetError) =
     let (UserId userId) = user.UserId
+    
+    let msg =
+      Message.event Error "Tweet Notification Error"
+      |> Message.setField "userId" userId
+
     match err with
     | NotifyTweetError (tweetId, ex) ->
       let (TweetId tId) = tweetId
-      Message.event Error "Tweet Notification Error"
+      msg
       |> Message.addExn ex
       |> Message.setField "tweetId" tId
-      |> Message.setField "userId" userId
       |> setUserData "err"
       >=> onPublishTweetSuccess tweetId
     | CreateTweetError ex ->
-      Message.event Error "Tweet Notification Error"
+      msg
       |> Message.addExn ex
-      |> Message.setField "userId" userId
       |> setUserData "err"
       >=> JSON.internalError
       
