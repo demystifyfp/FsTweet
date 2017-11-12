@@ -68,12 +68,12 @@ module Suave =
   open User
   open Auth.Suave
   open Suave.DotLiquid
-  open Logary
-  open Suave.Writers
   open Tweet
   open Chiron
   open Chessie
   open Domain
+  open Logary
+  open Suave.Writers
 
   type WallViewModel = {
     Username :  string
@@ -115,9 +115,9 @@ module Suave =
   }
 
   let onPublishTweetSuccess (TweetId id) = 
-    ["id", String (id.ToString())]
+    ["id", Json.String (id.ToString())]
     |> Map.ofList
-    |> Object
+    |> Json.Object
     |> JSON.ok
 
   let onPublishTweetFailure (user : User) (err : PublishTweetError) =
@@ -125,14 +125,14 @@ module Suave =
     match err with
     | NotifyTweetError (tweetId, ex) ->
       let (TweetId tId) = tweetId
-      Message.event LogLevel.Error "Tweet Notification Error"
+      Message.event Error "Tweet Notification Error"
       |> Message.addExn ex
       |> Message.setField "tweetId" tId
       |> Message.setField "userId" userId
       |> setUserData "err"
       >=> onPublishTweetSuccess tweetId
     | CreateTweetError ex ->
-      Message.event LogLevel.Error "Tweet Notification Error"
+      Message.event Error "Tweet Notification Error"
       |> Message.addExn ex
       |> Message.setField "userId" userId
       |> setUserData "err"
