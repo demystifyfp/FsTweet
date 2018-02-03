@@ -8,14 +8,13 @@ open System.IO
 open System.Reflection
 open Suave.Files
 open Database
-open System
 open Email
 open System.Net
 open Logary.Configuration
 open Logary
 open Logary.Targets
 open Hopac
-
+open FsConfig
 
 let currentPath =
   Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
@@ -41,38 +40,53 @@ let logIfError (logger : Logger) ctx =
   |> Option.iter logger.logSimple
   succeed
 
+type StreamConfig = {
+  Key : string
+  Secret : string
+  AppId : string
+}
+
+[<Convention("FSTWEET")>]
+type Config = {
+  DbConnString : string
+  PostmarkServerToken : string
+  SenderEmailAddress : string
+  ServerKey : string
+  [<CustomName("PORT")>]
+  Port : uint16
+  Environment : string
+  Stream : StreamConfig
+}
+
 [<EntryPoint>]
 let main argv =
   initDotLiquid ()
   setCSharpNamingConvention ()
 
-  let fsTweetConnString = 
-   Environment.GetEnvironmentVariable  "FSTWEET_DB_CONN_STRING"
-
-  let serverToken =
-    Environment.GetEnvironmentVariable "FSTWEET_POSTMARK_SERVER_TOKEN"
-
-  let senderEmailAddress =
-    Environment.GetEnvironmentVariable "FSTWEET_SENDER_EMAIL_ADDRESS"
-
-  let env = 
-    Environment.GetEnvironmentVariable "FSTWEET_ENVIRONMENT"
+  let config = 
+    match EnvConfig.Get<Config>() with
+    | Ok config -> config
+    | Result.Error error -> 
+      match error with
+      | NotFound envVarName -> 
+        failwithf "Environment variable %s not found" envVarName
+      | BadValue (envVarName, value) ->
+        failwithf "Unable to parse the value %s of the Environment variable %s" value envVarName
+      | NotSupported msg -> 
+        failwithf "Unable to read : %s" msg
 
   let streamConfig : GetStream.Config = {
-      ApiKey = 
-        Environment.GetEnvironmentVariable "FSTWEET_STREAM_KEY"
-      ApiSecret = 
-        Environment.GetEnvironmentVariable "FSTWEET_STREAM_SECRET"
-      AppId = 
-        Environment.GetEnvironmentVariable "FSTWEET_STREAM_APP_ID"
+      ApiKey = config.Stream.Key
+      ApiSecret = config.Stream.Secret
+      AppId = config.Stream.AppId
   }
 
   let sendEmail = 
-    match env with
+    match config.Environment with
     | "dev" -> consoleSendEmail
-    | _ -> initSendEmail senderEmailAddress serverToken
+    | _ -> initSendEmail config.SenderEmailAddress config.PostmarkServerToken
 
-  let getDataCtx = dataContext fsTweetConnString
+  let getDataCtx = dataContext config.DbConnString
 
   let getStreamClient = GetStream.newClient streamConfig
 
@@ -87,14 +101,9 @@ let main argv =
       UserProfile.Suave.webpart getDataCtx getStreamClient
     ]
     
-  let serverKey = 
-    Environment.GetEnvironmentVariable "FSTWEET_SERVER_KEY"
-    |> ServerKey.fromBase64
+  let serverKey = ServerKey.fromBase64 config.ServerKey
 
   let ipZero = IPAddress.Parse("0.0.0.0")
-  
-  let port = 
-    Environment.GetEnvironmentVariable "PORT"
 
   let targets = withTarget (Console.create Console.empty "console")
   let rules = withRule (Rule.createForTarget "console")
@@ -109,7 +118,7 @@ let main argv =
   let serverConfig = 
     {defaultConfig with 
       serverKey = serverKey
-      bindings=[HttpBinding.create HTTP ipZero (uint16 port)]}
+      bindings=[HttpBinding.create HTTP ipZero config.Port]}
 
   let appWithLogger = 
     app >=> context (logIfError logger)

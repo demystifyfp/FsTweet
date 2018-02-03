@@ -5,6 +5,7 @@ nuget Chessie
 nuget Chiron
 nuget DotLiquid 2.0.64
 nuget FAKE
+nuget FsConfig 0.0.3
 nuget FSharp.Core
 nuget Logary
 nuget NodaTime 1.3.2

@@ -9,6 +9,7 @@ Chiron
 stream-net
 NodaTime
 Logary
+FsConfig
 group Database
 SQLProvider
 Npgsql
